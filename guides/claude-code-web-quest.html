@@ -1,0 +1,1572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Code Web Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: sticky XP bar + winding level path, then stacked "level" sections in a 1140px column; diagrams use the full column width.
+   Design template: Refero style "Duolingo" (playground starter kit) — chunky rounded display type, tactile 3D buttons, candy palette on an airy canvas. */
+:root{
+  --bg:#f6faf3; --surface:#ffffff; --surface-2:#eef5ea; --line:#dbe5d5; --line-2:#c6d4bf;
+  --ink:#22301e; --ink-2:#51604b; --ink-3:#85937e;
+  --hud:rgba(246,250,243,.9);
+  --green:#58cc02; --green-d:#46a302; --green-ink:#3a8700; --green-t:#e1f9cc;
+  --blue:#1cb0f6;  --blue-d:#1495d1;  --blue-ink:#0874a9;  --blue-t:#dbf2fe;
+  --yellow:#ffc800;--yellow-d:#e0a500;--yellow-ink:#8a6100;--yellow-t:#fff3c7;
+  --grape:#a570ff; --grape-d:#8550e8; --grape-ink:#6c3ccc; --grape-t:#eee5ff;
+  --coral:#ff6b5e; --coral-d:#e04a3d; --coral-ink:#bb3226; --coral-t:#ffe3df;
+  --teal:#14c2b0;  --teal-d:#0ea292;  --teal-ink:#0a7a6e;  --teal-t:#d3f6f1;
+  --cloud:#ffffff; --syn:#fff6b8;
+  --f-display:"Fredoka","Baloo 2",ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif;
+  --f-body:"Nunito",ui-rounded,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:16px; --r-lg:22px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1b20; --surface:#16252c; --surface-2:#1c2f38; --line:#2b404b; --line-2:#3c5463;
+    --ink:#edf5f8; --ink-2:#afc0c8; --ink-3:#7d929c; --hud:rgba(15,27,32,.88);
+    --green-ink:#8ee04a; --green-t:#1b3410; --blue-ink:#63cbff; --blue-t:#0e3044;
+    --yellow-ink:#ffd94f; --yellow-t:#382d07; --grape-ink:#c6a6ff; --grape-t:#2b1f48;
+    --coral-ink:#ff9d93; --coral-t:#3d1e1a; --teal-ink:#4fe0cf; --teal-t:#0d332f;
+    --cloud:#d9efff; --syn:#4a4310;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1b20; --surface:#16252c; --surface-2:#1c2f38; --line:#2b404b; --line-2:#3c5463;
+  --ink:#edf5f8; --ink-2:#afc0c8; --ink-3:#7d929c; --hud:rgba(15,27,32,.88);
+  --green-ink:#8ee04a; --green-t:#1b3410; --blue-ink:#63cbff; --blue-t:#0e3044;
+  --yellow-ink:#ffd94f; --yellow-t:#382d07; --grape-ink:#c6a6ff; --grape-t:#2b1f48;
+  --coral-ink:#ff9d93; --coral-t:#3d1e1a; --teal-ink:#4fe0cf; --teal-t:#0d332f;
+  --cloud:#d9efff; --syn:#4a4310;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--blue-ink);font-weight:700;text-underline-offset:3px}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--surface-2);border:1px solid var(--line);padding:1px 6px;border-radius:7px;white-space:nowrap}
+h1,h2,h3,h4{text-wrap:balance}
+p{margin:0}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1140px;margin-inline:auto;padding-inline:max(16px,3vw)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* color roles */
+.c-green{--c:var(--green);--cd:var(--green-d);--ct:var(--green-t);--ci:var(--green-ink)}
+.c-blue{--c:var(--blue);--cd:var(--blue-d);--ct:var(--blue-t);--ci:var(--blue-ink)}
+.c-yellow{--c:var(--yellow);--cd:var(--yellow-d);--ct:var(--yellow-t);--ci:var(--yellow-ink)}
+.c-grape{--c:var(--grape);--cd:var(--grape-d);--ct:var(--grape-t);--ci:var(--grape-ink)}
+.c-coral{--c:var(--coral);--cd:var(--coral-d);--ct:var(--coral-t);--ci:var(--coral-ink)}
+.c-teal{--c:var(--teal);--cd:var(--teal-d);--ct:var(--teal-t);--ci:var(--teal-ink)}
+
+/* buttons: Duolingo-style tactile 3D press */
+.btn{--c:var(--green);--cd:var(--green-d);--fg:#fff;appearance:none;border:0;cursor:pointer;font:800 15px/1.1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--fg);background:var(--c);padding:15px 22px;border-radius:14px;box-shadow:0 4px 0 var(--cd);transition:transform .08s,box-shadow .08s,filter .15s;display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;text-align:center}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--cd)}
+.btn svg,.diagram .btn svg{width:20px;height:20px;flex:none;display:inline-block}
+.btn.c-blue{--c:var(--blue);--cd:var(--blue-d)}
+.btn.c-grape{--c:var(--grape);--cd:var(--grape-d)}
+.btn.c-coral{--c:var(--coral);--cd:var(--coral-d)}
+.btn.c-teal{--c:var(--teal);--cd:var(--teal-d)}
+.btn.c-yellow{--c:var(--yellow);--cd:var(--yellow-d);--fg:#3b2a00}
+.btn.ghost{--c:var(--surface);--cd:var(--line-2);--fg:var(--blue-ink);border:2px solid var(--line-2)}
+.btn.sm{padding:11px 15px;font-size:13px;border-radius:12px}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* HUD */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--hud);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:2px solid var(--line)}
+.hud-in{display:flex;align-items:center;gap:14px 18px;min-height:64px;padding-block:8px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:21px;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.brand svg{width:36px;height:36px}
+.xp{flex:1 1 260px;min-width:0;display:flex;align-items:center;gap:10px}
+.rank{font:800 12px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--grape-ink);background:var(--grape-t);padding:8px 10px;border-radius:99px;white-space:nowrap}
+.xp-bar{flex:1;min-width:60px;height:18px;border-radius:99px;background:var(--surface-2);border:2px solid var(--line);overflow:hidden}
+.xp-fill{height:100%;width:0;background:var(--yellow);border-radius:99px;transition:width .7s cubic-bezier(.3,1.4,.5,1);position:relative}
+.xp-fill::after{content:"";position:absolute;left:8px;right:8px;top:3px;height:4px;border-radius:9px;background:rgba(255,255,255,.55)}
+.xp-num{font-weight:900;font-variant-numeric:tabular-nums;color:var(--yellow-ink);white-space:nowrap;font-size:15px}
+.hud-btns{display:flex;gap:10px}
+.icon-btn{width:44px;height:42px;border-radius:12px;border:0;cursor:pointer;background:var(--c);box-shadow:0 4px 0 var(--cd);display:grid;place-items:center;color:#fff;transition:transform .08s,box-shadow .08s}
+.icon-btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--cd)}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn.c-yellow{color:#3b2a00}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;padding-block:44px 8px}
+.hero > *{min-width:0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:800 12.5px/1 var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--green-ink);background:var(--green-t);padding:9px 13px;border-radius:14px;line-height:1.35}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,6.2vw,70px);line-height:1.02;letter-spacing:-.02em;margin:16px 0 16px}
+.hero h1 .hl{color:var(--green-ink)}
+.hero .lead{font-size:clamp(17px,2vw,20px);color:var(--ink-2);max-width:56ch}
+.hero .row{margin-top:24px}
+.stats{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;color:var(--ink-3);font-weight:800;font-size:14px}
+.stats b{color:var(--ink);font-family:var(--f-display);font-size:20px;margin-right:4px}
+.mascot-wrap{position:relative;display:grid;place-items:center;min-height:300px}
+.nimbus{width:min(100%,360px);height:auto;cursor:pointer;overflow:visible}
+.nimbus:focus-visible{outline-offset:-6px}
+.bob{animation:bob 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.nimbus.jump .bob{animation:jump .7s cubic-bezier(.3,1.6,.5,1)}
+.blink{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.shadow{animation:shadow 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes jump{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-46px) scale(1.04,.96)}60%{transform:translateY(0) scale(1.08,.9)}100%{transform:translateY(0) scale(1)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes shadow{0%,100%{transform:scaleX(1);opacity:.5}50%{transform:scaleX(.82);opacity:.3}}
+.bubble{position:absolute;top:6px;right:4%;background:var(--surface);border:2px solid var(--line-2);border-radius:16px;padding:10px 14px;font-weight:800;font-size:14px;color:var(--ink);box-shadow:0 3px 0 var(--line-2)}
+.bubble::after{content:"";position:absolute;left:24px;bottom:-9px;width:14px;height:14px;background:var(--surface);border-right:2px solid var(--line-2);border-bottom:2px solid var(--line-2);transform:rotate(45deg)}
+.sticker{position:absolute;font:800 12px/1 var(--f-mono);padding:8px 10px;border-radius:10px;background:var(--ct);color:var(--ci);border:2px solid var(--c);animation:floaty 5s ease-in-out infinite}
+.sticker:nth-of-type(2){animation-delay:-1.5s}.sticker:nth-of-type(3){animation-delay:-3s}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+
+/* quest path */
+.path{overflow-x:auto;padding-block:20px 6px;margin-top:10px;scrollbar-width:thin}
+.path ol{list-style:none;margin:0;padding:6px 6px 26px;display:flex;gap:6px;min-width:max-content;position:relative}
+.path ol::before{content:"";position:absolute;left:50px;right:50px;top:36px;border-top:4px dotted var(--line-2)}
+.path li{display:flex;flex-direction:column;align-items:center;gap:8px;width:100px;position:relative}
+.path li:nth-child(even){transform:translateY(16px)}
+.pnode{width:62px;height:58px;border-radius:50%;background:var(--c);box-shadow:0 5px 0 var(--cd);display:grid;place-items:center;color:#fff;border:0;cursor:pointer;position:relative;transition:transform .08s,box-shadow .08s}
+.pnode.c-yellow{color:#3b2a00}
+.pnode:active{transform:translateY(5px);box-shadow:0 0 0 var(--cd)}
+.pnode svg{width:28px;height:28px}
+.pnode .tick{position:absolute;right:-6px;top:-6px;width:24px;height:24px;border-radius:50%;background:var(--yellow);box-shadow:0 2px 0 var(--yellow-d);display:none;place-items:center;color:#3b2a00}
+.pnode .tick svg{width:15px;height:15px}
+.path li.done .tick{display:grid}
+.plabel{font:800 12.5px/1.2 var(--f-body);text-align:center;color:var(--ink-2)}
+
+/* level sections */
+.level{padding-block:76px 12px;scroll-margin-top:84px}
+.level-head{max-width:780px;margin-bottom:28px}
+.tag{display:inline-flex;align-items:center;gap:8px;font:800 12.5px/1 var(--f-body);letter-spacing:.12em;text-transform:uppercase;padding:9px 13px;border-radius:99px;background:var(--ct);color:var(--ci)}
+.tag svg{width:16px;height:16px}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,4.4vw,46px);line-height:1.06;letter-spacing:-.01em;margin:14px 0 10px;color:var(--ink)}
+h3{font-family:var(--f-display);font-weight:600;font-size:23px;line-height:1.2;margin:0}
+h4{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0}
+.lead{font-size:18.5px;color:var(--ink-2);max-width:64ch}
+.next-row{display:flex;justify-content:flex-end;margin-top:30px}
+.card{background:var(--surface);border:2px solid var(--line);border-bottom-width:5px;border-radius:var(--r-lg);padding:22px}
+.muted{color:var(--ink-2)}
+.small{font-size:14.5px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:800 12px/1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:99px;background:var(--ct);color:var(--ci);white-space:nowrap}
+.xp-chip{font:900 12px/1 var(--f-body);color:var(--yellow-ink);background:var(--yellow-t);padding:6px 9px;border-radius:99px;white-space:nowrap}
+sup a{text-decoration:none;font-size:.72em;padding:0 2px;color:var(--blue-ink)}
+.syn{background:var(--syn);padding:0 4px;border-radius:4px}
+
+/* level 0 flip cards */
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px}
+.flip{perspective:1400px}
+.flip-inner{display:grid;height:100%;transition:transform .7s cubic-bezier(.3,1.25,.5,1);transform-style:preserve-3d}
+.flip.on .flip-inner{transform:rotateY(180deg)}
+.face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--surface);border:2px solid var(--line);border-bottom-width:5px;border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.face.back{transform:rotateY(180deg);background:var(--ct);border-color:var(--c)}
+.face .q{font:800 13px/1.3 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ci)}
+.face .a{font-family:var(--f-display);font-weight:600;font-size:23px;line-height:1.2;color:var(--ink)}
+.face .grow{flex:1}
+.face ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.face .body{font-size:15.5px;color:var(--ink)}
+.face .flipbtn{align-self:flex-start}
+.qnum{width:40px;height:40px;border-radius:12px;background:var(--c);box-shadow:0 3px 0 var(--cd);display:grid;place-items:center;color:#fff;font:700 19px var(--f-display)}
+.c-yellow .qnum{color:#3b2a00}
+
+/* diagrams */
+.diagram{background:var(--surface);border:2px solid var(--line);border-radius:var(--r-lg);padding:14px;overflow:hidden}
+.diagram svg{display:block;width:100%;height:auto}
+.diag-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.svg-text{font-family:var(--f-body);font-weight:800;fill:var(--ink)}
+.svg-sub{font-family:var(--f-body);font-weight:700;fill:var(--ink-2)}
+.mm .edge{fill:none;stroke:var(--c);stroke-width:5;stroke-linecap:round}
+.mm .edge.leaf{stroke-width:3;opacity:.55}
+.mm .sh{fill:var(--cd)}
+.mm .bd{fill:var(--ct);stroke:var(--c);stroke-width:3}
+.mm .center .bd{fill:var(--ink);stroke:var(--ink)}
+.mm .center .sh{fill:var(--ink-3)}
+.mm .center .svg-text{fill:var(--bg)}
+.mm .center .svg-sub{fill:var(--bg);opacity:.8}
+.mm .leafn .bd{fill:var(--surface);stroke:var(--line-2);stroke-width:2}
+.mm .leafn .svg-text{fill:var(--ink-2);font-weight:700}
+.mm .branch{cursor:pointer}
+.mm .branch:hover .bd,.mm .branch:focus .bd{stroke-width:5}
+.mm .branch.sel .bd{fill:var(--c)}
+.mm .branch.sel .svg-text{fill:#fff}
+.mm .branch.seen .badge-dot{fill:var(--yellow);stroke:var(--surface)}
+.mm .badge-dot{fill:none}
+.node{transform-box:fill-box;transform-origin:center}
+.play .edge{stroke-dasharray:var(--len);animation:draw .8s ease-out both;animation-delay:var(--d)}
+.play .node{animation:pop .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--d)}
+@keyframes draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.panel{border-radius:var(--r-lg);padding:20px 22px;background:var(--ct);border:2px solid var(--c);display:grid;gap:10px}
+.panel-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.panel-head .dot{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:0 2px 0 var(--cd)}
+.panel ul{margin:0;padding-left:20px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.bchip{appearance:none;border:2px solid var(--c);background:var(--surface);color:var(--ci);font:800 13px/1 var(--f-body);padding:10px 12px;border-radius:12px;cursor:pointer;box-shadow:0 3px 0 var(--c);display:inline-flex;gap:7px;align-items:center}
+.bchip:active{transform:translateY(3px);box-shadow:none}
+.bchip.seen::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 2px var(--yellow-d)}
+.mm-layout{display:grid;gap:16px}
+
+/* flowchart */
+.flow-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.flow-side{position:sticky;top:96px;display:grid;gap:14px}
+.fl .edge{fill:none;stroke:var(--line-2);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.fl .edge.ants{stroke-dasharray:7 9;animation:ants 1.1s linear infinite}
+@keyframes ants{to{stroke-dashoffset:-32}}
+.fl .arrow{fill:var(--line-2)}
+.fl .sh{fill:var(--cd)}
+.fl .bd{fill:var(--surface);stroke:var(--c);stroke-width:3}
+.fl .num{fill:var(--c)}
+.fl .numt{fill:#fff;font-family:var(--f-display);font-weight:700}
+.fl .c-yellow .numt{fill:#3b2a00}
+.fl .step{cursor:pointer}
+.fl .step.seen .bd{fill:var(--ct)}
+.fl .step.on .bd{fill:var(--ct);stroke-width:5}
+.fl .halo{fill:none;stroke:var(--c);stroke-width:3;opacity:0}
+.fl .step.on .halo{animation:halo 1.4s ease-out infinite}
+@keyframes halo{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.18)}}
+.fl .halo{transform-box:fill-box;transform-origin:center}
+.fl .lbl{font-family:var(--f-body);font-weight:900;font-size:14px;letter-spacing:.06em;fill:var(--ink-3)}
+.orb{fill:none;stroke:var(--yellow);stroke-width:5;filter:drop-shadow(0 2px 0 var(--yellow-d))}
+.orb-glow{fill:none;stroke:var(--yellow);stroke-width:8;opacity:.35;animation:glow 1s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+@keyframes glow{to{transform:scale(1.6);opacity:.1}}
+.stepcount{font:800 12.5px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--ci)}
+.tipbox{background:var(--surface);border:2px dashed var(--c);border-radius:14px;padding:12px 14px;font-size:15px}
+.tipbox b{color:var(--ci)}
+.switch{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:14.5px;cursor:pointer;user-select:none}
+.switch input{appearance:none;width:52px;height:30px;border-radius:99px;background:var(--line-2);position:relative;cursor:pointer;transition:background .2s;flex:none;margin:0}
+.switch input::after{content:"";position:absolute;left:4px;top:4px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.18);transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+.switch input:checked{background:var(--green)}
+.switch input:checked::after{transform:translateX(22px)}
+.checklist{display:grid;gap:10px}
+.check{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;font-weight:700}
+.check input{appearance:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line-2);flex:none;margin:0;display:grid;place-items:center;background:var(--surface);cursor:pointer}
+.check input:checked{background:var(--green);border-color:var(--green-d)}
+.check input:checked::after{content:"";width:12px;height:7px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.check:has(input:checked){border-color:var(--green);background:var(--green-t)}
+.codebox{position:relative;background:#14212a;color:#d9f2e3;border-radius:14px;padding:16px 16px 16px;font:500 13.5px/1.6 var(--f-mono);overflow-x:auto;white-space:pre;border:2px solid #23384a;padding-top:52px}
+.codebox .k{color:#8ee04a}.codebox .c{color:#7d97a8}.codebox .s{color:#ffd94f}
+.copy{position:absolute;top:10px;right:10px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+.two > *{min-width:0}
+
+/* level 3 vault vs sandcastle */
+.sort-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+.sort-items{display:grid;gap:12px}
+.sitem{background:var(--surface);border:2px solid var(--line);border-bottom-width:5px;border-radius:18px;padding:14px 16px;display:grid;gap:10px}
+.sitem .t{font-weight:800;font-size:16.5px}
+.sitem .why{font-size:14.5px;color:var(--ink-2);display:none}
+.sitem.answered .why{display:block}
+.sitem.right{border-color:var(--green);background:var(--green-t)}
+.sitem.wrong{border-color:var(--coral);background:var(--coral-t);animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.sitem .verdict{font:900 12px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase}
+.sitem.right .verdict{color:var(--green-ink)}.sitem.wrong .verdict{color:var(--coral-ink)}
+.scene{position:sticky;top:96px;display:grid;gap:14px}
+.scene svg{width:100%;height:auto;display:block;border-radius:18px}
+.sea{fill:var(--blue)}
+.sand{fill:#f4d58d}
+.castle{fill:#e9bf68;stroke:#c99a3e;stroke-width:2}
+.vault-body{fill:var(--grape);stroke:var(--grape-d);stroke-width:4}
+.wave{fill:var(--blue);opacity:.92;transform:translateX(-110%)}
+.washing .wave{animation:wave 2.6s ease-in-out forwards}
+@keyframes wave{0%{transform:translateX(-110%)}55%{transform:translateX(0)}100%{transform:translateX(115%)}}
+.washing .castle-g{animation:melt 2.6s ease-in forwards;transform-box:fill-box;transform-origin:bottom}
+@keyframes melt{0%,40%{transform:scaleY(1);opacity:1}70%{transform:scaleY(.25);opacity:.6}100%{transform:scaleY(.08);opacity:.4}}
+.scoreline{display:flex;gap:14px;flex-wrap:wrap;font-weight:800}
+.scoreline span{background:var(--surface-2);border-radius:99px;padding:6px 12px}
+
+/* level 4 pipes */
+.pp .edge{fill:none;stroke:var(--line-2);stroke-width:5;stroke-linecap:round}
+.pp .edge.live{stroke:var(--green)}
+.pp .edge.dead{stroke:var(--coral);stroke-dasharray:4 9}
+.pp .sh{fill:var(--cd)}
+.pp .bd{fill:var(--ct);stroke:var(--c);stroke-width:3}
+.pp .gate-bd{fill:var(--surface);stroke:var(--coral);stroke-width:4;transition:stroke .3s}
+.pp .bars line{stroke:var(--coral);stroke-width:6;stroke-linecap:round;transition:opacity .4s,stroke .3s}
+.pp.net-open .gate-bd{stroke:var(--green)}
+.pp.net-open .bars line{opacity:.12;stroke:var(--green)}
+.pp .gate-tag{fill:var(--coral)}
+.pp.net-open .gate-tag{fill:var(--green)}
+.pp .gate-tag-t{fill:#fff;font:900 12px var(--f-body);letter-spacing:.08em}
+.pp .status{font:900 13px var(--f-body);letter-spacing:.04em}
+.pp .status.ok{fill:var(--green-ink)}.pp .status.bad{fill:var(--coral-ink)}
+.packet{stroke:#fff;stroke-width:2}
+.packet.go{fill:var(--yellow)}.packet.back{fill:var(--green)}.packet.err{fill:var(--coral)}
+.pop-t{font:900 14px var(--f-body);fill:var(--coral-ink)}
+.toggles{display:grid;gap:12px;align-content:start}
+.toggle-card{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px 14px}
+.toggle-card .mono{font-size:12.5px;color:var(--ink-2)}
+.routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:18px;margin-top:22px}
+.routes .card{display:grid;gap:12px;align-content:start}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+.steps li::marker{font-family:var(--f-display);font-weight:700;color:var(--ci)}
+.shield{background:var(--coral-t);border:2px solid var(--coral);border-radius:var(--r-lg);padding:20px 22px;display:grid;gap:10px;margin-top:22px}
+.shield ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.auth-split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;margin-top:22px}
+
+/* level 5 versus */
+.vs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:16px;align-items:stretch}
+.fighter{background:var(--surface);border:2px solid var(--c);border-bottom-width:6px;border-radius:24px;padding:20px;display:grid;gap:12px;align-content:start}
+.fighter .art{display:grid;place-items:center;background:var(--ct);border-radius:18px;padding:10px}
+.fighter .art svg{width:150px;height:auto}
+.fighter .name{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.1}
+.fighter .cls{font:800 12px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--ci)}
+.stat{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px;align-items:center;font-size:14px;font-weight:700}
+.meter{height:14px;border-radius:99px;background:var(--surface-2);border:2px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:var(--v);background:var(--c);border-radius:99px;transition:width 1s cubic-bezier(.3,1.3,.5,1)}
+.vs.prime .meter i{width:0}
+.vs-badge{align-self:center;width:66px;height:66px;border-radius:50%;background:var(--yellow);box-shadow:0 5px 0 var(--yellow-d);display:grid;place-items:center;font:700 26px var(--f-display);color:#3b2a00;animation:wiggle 2.4s ease-in-out infinite}
+@keyframes wiggle{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) scale(1.06)}}
+.table-wrap{overflow-x:auto;margin-top:22px;border:2px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px}
+th,td{text-align:left;padding:13px 16px;border-bottom:2px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+thead th{font:800 12.5px/1.2 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2)}
+tbody th{font-weight:800;color:var(--ink);width:26%}
+.yes{color:var(--green-ink);font-weight:900}.no{color:var(--coral-ink);font-weight:900}
+.picker{margin-top:22px;display:grid;gap:14px}
+.pq{display:grid;gap:10px}
+.pq .row .btn.picked{--c:var(--blue);--cd:var(--blue-d);--fg:#fff}
+.result{display:none}
+.result.show{display:grid}
+
+/* level 6 loop */
+.loop-layout{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:24px;align-items:center}
+.lp .ring{fill:none;stroke:var(--line);stroke-width:14}
+.lp .arc{fill:none;stroke:var(--line-2);stroke-width:4}
+.lp .arrow{fill:var(--line-2)}
+.lp .comet{animation:spin 9s linear infinite;transform-origin:220px 220px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lp .comet circle{fill:var(--yellow);stroke:#fff;stroke-width:3}
+.lp .stepn{cursor:pointer}
+.lp .stepn .sh{fill:var(--cd)}
+.lp .stepn .bd{fill:var(--c)}
+.lp .stepn .svg-text{fill:#fff;font-family:var(--f-display);font-weight:600}
+.lp .c-yellow .svg-text{fill:#3b2a00}
+.lp .stepn.on .bd{stroke:var(--ink);stroke-width:4}
+.lp .stepn.seen .ring-dot{fill:var(--yellow)}
+.lp .ring-dot{fill:none}
+.prompt-pairs{display:grid;gap:14px;margin-top:22px}
+.pair{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:12px}
+.pair > div{border-radius:16px;padding:14px 16px;font-size:15.5px}
+.weak{background:var(--coral-t);border:2px solid var(--coral)}
+.strong{background:var(--green-t);border:2px solid var(--green)}
+.pair .lab{font:900 11.5px/1 var(--f-body);letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px}
+.weak .lab{color:var(--coral-ink)}.strong .lab{color:var(--green-ink)}
+
+/* level 7 wand + traps */
+.wand{border-radius:26px;padding:clamp(22px,4vw,40px);background:var(--grape-t);border:2px solid var(--grape);display:grid;gap:14px;position:relative;overflow:hidden}
+.wand .frame{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,2.6vw,26px);line-height:1.3;color:var(--grape-ink);max-width:40ch}
+.wand p{max-width:72ch}
+.wand .spark{position:absolute;width:10px;height:10px;background:var(--yellow);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);animation:twinkle 2.2s ease-in-out infinite}
+@keyframes twinkle{0%,100%{transform:scale(.4);opacity:.3}50%{transform:scale(1.5) rotate(45deg);opacity:1}}
+.traps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px;margin-top:22px}
+.trap{background:var(--surface);border:2px solid var(--line);border-bottom-width:5px;border-radius:20px;padding:18px;display:grid;gap:10px;align-content:start}
+.trap .meta{display:flex;gap:8px;flex-wrap:wrap}
+.trap .fix{display:none;background:var(--green-t);border:2px solid var(--green);border-radius:14px;padding:12px;font-size:15px}
+.trap.disarmed{border-color:var(--green)}
+.trap.disarmed .fix{display:block}
+.trap.disarmed .btn{display:none}
+.trap .t{font-weight:800}
+
+/* level 8 quiz */
+.quiz{max-width:760px;display:grid;gap:16px}
+.qbar{display:flex;align-items:center;gap:14px}
+.qprog{flex:1;height:16px;border-radius:99px;background:var(--surface-2);border:2px solid var(--line);overflow:hidden}
+.qprog i{display:block;height:100%;width:0;background:var(--green);border-radius:99px;transition:width .5s}
+.hearts{display:flex;gap:4px}
+.hearts svg{width:26px;height:26px}
+.heart{fill:var(--coral)}.heart.lost{fill:var(--line-2)}
+.qcard{display:grid;gap:14px}
+.qcard .qq{font-family:var(--f-display);font-weight:600;font-size:clamp(21px,2.6vw,27px);line-height:1.25}
+.opts{display:grid;gap:10px}
+.opt{appearance:none;text-align:left;background:var(--surface);border:2px solid var(--line-2);border-bottom-width:5px;border-radius:16px;padding:14px 16px;font:700 16.5px/1.35 var(--f-body);color:var(--ink);cursor:pointer;display:flex;gap:12px;align-items:center}
+.opt .k{width:30px;height:30px;border-radius:9px;border:2px solid var(--line-2);display:grid;place-items:center;font:800 14px var(--f-body);color:var(--ink-2);flex:none}
+.opt:hover:not([disabled]){border-color:var(--blue);background:var(--blue-t)}
+.opt.right{border-color:var(--green);background:var(--green-t)}
+.opt.wrong{border-color:var(--coral);background:var(--coral-t);animation:shake .4s}
+.opt[disabled]{cursor:default}
+.feedback{border-radius:16px;padding:14px 16px;font-weight:700;display:none}
+.feedback.show{display:block}
+.feedback.good{background:var(--green-t);color:var(--green-ink);border:2px solid var(--green)}
+.feedback.bad{background:var(--coral-t);color:var(--coral-ink);border:2px solid var(--coral)}
+
+/* trophies */
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:14px}
+.badge{background:var(--surface);border:2px solid var(--line);border-bottom-width:5px;border-radius:20px;padding:16px 12px;display:grid;justify-items:center;text-align:center;gap:8px}
+.badge .medal{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--ink-3);box-shadow:0 4px 0 var(--line-2)}
+.badge .medal svg{width:30px;height:30px}
+.badge.earned .medal{background:var(--c);color:#fff;box-shadow:0 4px 0 var(--cd);animation:pop .6s cubic-bezier(.3,1.6,.5,1)}
+.badge.earned.c-yellow .medal{color:#3b2a00}
+.badge .bn{font-family:var(--f-display);font-weight:600;font-size:16.5px;line-height:1.15}
+.badge .bd2{font-size:13px;color:var(--ink-3);line-height:1.35}
+.badge:not(.earned) .bn{color:var(--ink-3)}
+.party{margin-top:26px;border-radius:var(--r-lg);padding:20px 22px;background:var(--surface);border:2px dashed var(--line-2);display:grid;gap:12px}
+.cert{display:none;margin-top:26px;border-radius:26px;padding:clamp(22px,4vw,40px);background:var(--yellow-t);border:3px solid var(--yellow);text-align:center;gap:12px;justify-items:center}
+.cert.show{display:grid}
+.cert .big{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4vw,42px);line-height:1.1}
+.cert input{font:700 17px var(--f-body);padding:12px 14px;border-radius:12px;border:2px solid var(--line-2);background:var(--surface);color:var(--ink);text-align:center;width:min(100%,340px)}
+.sources{margin-top:60px;padding-block:28px 60px;border-top:2px solid var(--line)}
+.sources ol{padding-left:22px;display:grid;gap:6px;font-size:15px;color:var(--ink-2)}
+.sources a{font-weight:700}
+.foot{font-size:14px;color:var(--ink-3);margin-top:18px;max-width:80ch}
+
+/* toast + fx */
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:100}
+.toasts{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:90;align-items:center;pointer-events:none;width:min(92vw,440px)}
+.toast{background:var(--ink);color:var(--bg);font-weight:800;padding:12px 18px;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.25);animation:toastIn .4s cubic-bezier(.3,1.5,.5,1);text-align:center}
+.toast.gold{background:var(--yellow);color:#3b2a00;box-shadow:0 4px 0 var(--yellow-d)}
+@keyframes toastIn{from{transform:translateY(20px) scale(.9);opacity:0}}
+.xpfloat{position:fixed;z-index:95;font:700 20px var(--f-display);color:var(--yellow-ink);pointer-events:none;animation:floatUp 1.2s ease-out forwards;text-shadow:0 2px 0 var(--surface)}
+@keyframes floatUp{to{transform:translateY(-60px);opacity:0}}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr}
+  .mascot-wrap{min-height:240px}
+  .flow-layout,.sort-layout,.loop-layout{grid-template-columns:1fr}
+  .flow-side,.scene{position:static}
+  .vs{grid-template-columns:1fr}
+  .vs-badge{justify-self:center}
+}
+@media (max-width:560px){
+  body{font-size:16.5px}
+  .rank{display:none}
+  .xp{flex:1 1 120px}
+  .hud-in{flex-wrap:nowrap;gap:10px}
+  .icon-btn{width:40px}
+  .pair{grid-template-columns:1fr}
+  .stat{grid-template-columns:minmax(0,1fr) 90px}
+  .brand span{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<header class="hud">
+  <div class="wrap hud-in">
+    <a class="brand" href="#top" aria-label="Back to top">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="6" width="44" height="38" rx="12" fill="var(--green)"/><rect x="2" y="2" width="44" height="38" rx="12" fill="var(--green)" stroke="var(--green-d)" stroke-width="0"/><path d="M14 27h18a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0-3 10z" fill="#fff"/><path d="M20 21l-2 2 2 2M28 21l2 2-2 2" stroke="var(--green-d)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Web Quest</span>
+    </a>
+    <div class="xp">
+      <span class="rank" id="rank">Rookie</span>
+      <div class="xp-bar" role="progressbar" aria-label="Experience points" aria-valuemin="0" id="xpbar"><div class="xp-fill" id="xpfill"></div></div>
+      <span class="xp-num"><span id="xpnum">0</span> XP</span>
+    </div>
+    <div class="hud-btns">
+      <button class="icon-btn c-yellow" id="hudConfetti" aria-label="Pop confetti" data-ico="party"></button>
+      <button class="icon-btn c-grape" id="themeBtn" aria-label="Switch between light and dark" data-ico="moon"></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap">
+
+  <section class="hero" aria-labelledby="heroTitle">
+    <div>
+      <span class="eyebrow">Claude Code on the web &middot; field guide</span>
+      <h1 id="heroTitle">Build in the cloud. <span class="hl">Keep what matters.</span></h1>
+      <p class="lead">Do you need a project? Where do your files live? Can you plug in a real database and logins? This quest answers all of it in plain words, one level at a time. Earn XP, collect badges, pop confetti.</p>
+      <div class="row">
+        <a class="btn" href="#l0">Start the quest</a>
+        <button class="btn ghost" id="heroConfetti" data-ico="party">Confetti, please</button>
+      </div>
+      <div class="stats"><span><b>6</b>quick answers</span><span><b>2</b>animated reveals</span><span><b>10</b>badges</span><span><b>9</b>levels</span></div>
+    </div>
+    <div class="mascot-wrap">
+      <span class="sticker c-green" style="left:4%;top:20%">repo</span>
+      <span class="sticker c-blue" style="left:10%;bottom:12%">.env</span>
+      <span class="sticker c-coral" style="right:2%;bottom:24%">PR #1</span>
+      <div class="bubble">Tap me!</div>
+      <svg class="nimbus" id="nimbus" viewBox="0 0 320 280" role="button" tabindex="0" aria-label="Nimbus the cloud mascot. Tap for confetti.">
+        <ellipse class="shadow" cx="160" cy="262" rx="92" ry="10" fill="var(--line-2)"/>
+        <g class="bob">
+          <g fill="var(--blue-d)">
+            <rect x="58" y="110" width="204" height="104" rx="52"/>
+            <circle cx="112" cy="122" r="52"/><circle cx="172" cy="96" r="66"/><circle cx="226" cy="132" r="48"/>
+          </g>
+          <g fill="var(--cloud)">
+            <rect x="64" y="116" width="192" height="92" rx="46"/>
+            <circle cx="112" cy="122" r="46"/><circle cx="172" cy="96" r="60"/><circle cx="226" cy="132" r="42"/>
+          </g>
+          <g class="blink"><ellipse cx="140" cy="128" rx="11" ry="14" fill="#22301e"/><ellipse cx="196" cy="128" rx="11" ry="14" fill="#22301e"/></g>
+          <circle cx="144" cy="123" r="4" fill="#fff"/><circle cx="200" cy="123" r="4" fill="#fff"/>
+          <ellipse cx="120" cy="152" rx="11" ry="7" fill="#ff8fb1" opacity=".55"/><ellipse cx="218" cy="152" rx="11" ry="7" fill="#ff8fb1" opacity=".55"/>
+          <path d="M156 150q12 12 24 0" stroke="#22301e" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <g transform="translate(118 168)">
+            <rect x="0" y="0" width="88" height="56" rx="9" fill="#22301e"/>
+            <rect x="6" y="6" width="76" height="42" rx="5" fill="#0f1a12"/>
+            <path d="M14 18l8 6-8 6" stroke="var(--green)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="28" y="28" width="20" height="4" rx="2" fill="var(--green)"><animate attributeName="opacity" values="1;0;1" dur="1.1s" repeatCount="indefinite"/></rect>
+            <rect x="-10" y="56" width="108" height="10" rx="5" fill="#3a4a36"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <nav class="path" aria-label="Quest levels"><ol id="pathList"></ol></nav>
+
+  <!-- LEVEL 0 -->
+  <section class="level c-yellow" id="l0" aria-labelledby="l0t">
+    <div class="level-head">
+      <span class="tag" data-ico="bolt">Level 0 &middot; Quick answers</span>
+      <h2 id="l0t">Your six questions, answered first</h2>
+      <p class="lead">The short answer is on the front of each card. Flip a card for the full story. Each flip earns XP.</p>
+    </div>
+    <div class="qa-grid" id="qaGrid"></div>
+    <div class="next-row"><a class="btn c-yellow" href="#l1">Next: the big map</a></div>
+  </section>
+
+  <!-- LEVEL 1 -->
+  <section class="level c-green" id="l1" aria-labelledby="l1t">
+    <div class="level-head">
+      <span class="tag" data-ico="map">Level 1 &middot; Reveal 1</span>
+      <h2 id="l1t">The big map: every part in one picture</h2>
+      <p class="lead">Claude Code on the web has six parts. Tap a colored branch to learn what it does. Explore all six to earn the Map Reader badge.</p>
+    </div>
+    <div class="mm-layout">
+      <div class="diagram">
+        <div class="diag-bar"><span class="chip c-green">Mind map</span><button class="btn sm c-green" id="mmReplay" data-ico="play">Play the reveal</button></div>
+        <div id="mm"></div>
+      </div>
+      <div class="chips" id="mmChips" aria-label="Branches"></div>
+      <div class="panel c-green" id="mmPanel" aria-live="polite"></div>
+    </div>
+    <div class="next-row"><a class="btn" href="#l2">Next: setup flow</a></div>
+  </section>
+
+  <!-- LEVEL 2 -->
+  <section class="level c-blue" id="l2" aria-labelledby="l2t">
+    <div class="level-head">
+      <span class="tag" data-ico="flow">Level 2 &middot; Reveal 2</span>
+      <h2 id="l2t">Setup flow: from zero to your first merge</h2>
+      <p class="lead">Press Play. The gold orb walks the path and lights up each step. Steer it with Next and Back. Flip the switch to see what happens when your repo is missing.</p>
+    </div>
+    <div class="flow-layout">
+      <div class="diagram">
+        <div class="diag-bar">
+          <span class="chip c-blue">Animated flowchart</span>
+          <label class="switch"><input type="checkbox" id="flowMissing"> Pretend my repo is missing</label>
+        </div>
+        <div id="flow"></div>
+      </div>
+      <div class="flow-side">
+        <div class="row">
+          <button class="btn c-blue" id="flowPlay" data-ico="play">Play</button>
+          <button class="btn sm ghost" id="flowBack">Back</button>
+          <button class="btn sm ghost" id="flowNext">Next</button>
+          <button class="btn sm ghost" id="flowReset">Restart</button>
+        </div>
+        <div class="panel c-blue" id="flowPanel" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="two" style="margin-top:30px">
+      <div class="card">
+        <div class="panel-head" style="margin-bottom:14px"><h3>Setup checklist</h3><span class="xp-chip">+5 XP each</span></div>
+        <div class="checklist" id="checklist"></div>
+      </div>
+      <div class="card" style="display:grid;gap:12px;align-content:start">
+        <div class="panel-head"><h3>Starter CLAUDE.md</h3><span class="chip c-green">copy me</span></div>
+        <p class="muted small">CLAUDE.md is a plain text file at the top of your repo. Claude reads it at the start of every session.<sup><a href="#src-6">6</a></sup> Think of it as house rules. Change the words in it to fit your project.</p>
+        <div class="codebox" id="claudeMd"><button class="btn sm ghost copy" data-copy="claudeMd">Copy</button><span class="k"># CLAUDE.md</span>
+
+<span class="k">## What this project is</span>
+A customer portal. Next.js front end, Supabase for
+the database and user login, Pinecone for search.
+
+<span class="k">## House rules</span>
+- Never print, log or commit secret keys.
+  Read them from environment variables.
+- Browser code uses the Supabase publishable (anon)
+  key only. Row Level Security stays on.
+- Run <span class="s">npm test</span> before every push.
+- Finish every task with: commit, push, open a PR.
+
+<span class="k">## Where things live</span>
+- docs/          product notes and decisions
+- supabase/      database migrations
+- src/lib/search pinecone helpers</div>
+      </div>
+    </div>
+    <div class="next-row"><a class="btn c-blue" href="#l3">Next: vault or sandcastle</a></div>
+  </section>
+
+  <!-- LEVEL 3 -->
+  <section class="level c-teal" id="l3" aria-labelledby="l3t">
+    <div class="level-head">
+      <span class="tag" data-ico="lock">Level 3 &middot; Where things live</span>
+      <h2 id="l3t">Vault or sandcastle?</h2>
+      <p class="lead">Some things are saved for good (the vault). Some get washed away when the cloud computer is recycled (the sandcastle). Sort all ten, then send the wave.</p>
+    </div>
+    <div class="sort-layout">
+      <div class="sort-items" id="sortItems"></div>
+      <div class="scene">
+        <div class="diagram" style="padding:0">
+          <svg viewBox="0 0 420 260" id="beach" role="img" aria-label="A purple vault on the left and a sandcastle on a beach on the right">
+            <rect width="420" height="260" fill="var(--blue-t)"/>
+            <circle cx="360" cy="46" r="24" fill="var(--yellow)"/>
+            <rect y="190" width="420" height="70" class="sand"/>
+            <g>
+              <rect x="34" y="96" width="120" height="104" rx="16" class="vault-body"/>
+              <circle cx="94" cy="148" r="30" fill="var(--grape-t)" stroke="var(--grape-d)" stroke-width="4"/>
+              <g id="dial" style="transform-origin:94px 148px;transition:transform 1.2s cubic-bezier(.3,1.4,.5,1)"><path d="M94 124v48M70 148h48M77 131l34 34M111 131l-34 34" stroke="var(--grape-d)" stroke-width="4" stroke-linecap="round"/></g>
+              <text x="94" y="88" text-anchor="middle" class="svg-text" font-size="15">VAULT</text>
+            </g>
+            <g class="castle-g">
+              <rect x="262" y="140" width="110" height="52" class="castle"/>
+              <rect x="252" y="118" width="30" height="74" class="castle"/>
+              <rect x="352" y="118" width="30" height="74" class="castle"/>
+              <rect x="300" y="104" width="34" height="88" class="castle"/>
+              <path d="M252 118h8v-8h7v8h7v-8h8v8M352 118h8v-8h7v8h7v-8h8v8M300 104h9v-9h8v9h8v-9h9v9" fill="#e9bf68" stroke="#c99a3e" stroke-width="2"/>
+              <rect x="309" y="160" width="16" height="32" rx="8" fill="#c99a3e"/>
+              <path d="M317 104V80l16 6-16 6" fill="var(--coral)" stroke="var(--coral-d)" stroke-width="2"/>
+            </g>
+            <text x="317" y="222" text-anchor="middle" class="svg-text" font-size="15">SANDCASTLE</text>
+            <path class="wave" d="M-20 260V170q30-24 60 0t60 0 60 0 60 0 60 0 60 0 60 0 60 0V260z"/>
+          </svg>
+        </div>
+        <div class="scoreline"><span>Sorted: <b id="sortDone">0</b>/10</span><span>Correct: <b id="sortRight">0</b></span></div>
+        <div class="row"><button class="btn c-teal" id="waveBtn" data-ico="wave">Send the wave</button><button class="btn sm ghost" id="sortReset">Sort again</button></div>
+        <p class="muted small" id="waveMsg">The wave shows what a recycled cloud computer forgets.</p>
+      </div>
+    </div>
+    <div class="next-row"><a class="btn c-teal" href="#l4">Next: plug in data and login</a></div>
+  </section>
+
+  <!-- LEVEL 4 -->
+  <section class="level c-grape" id="l4" aria-labelledby="l4t">
+    <div class="level-head">
+      <span class="tag" data-ico="db">Level 4 &middot; Database and login</span>
+      <h2 id="l4t">Plug in Supabase and Pinecone</h2>
+      <p class="lead">Yes, you can use a lasting database and real logins. The database lives on its own servers, so your data stays when sessions end. Your job is to open two doors: keys and network. Flip the switches until data flows to both databases.</p>
+    </div>
+    <div class="two">
+      <div class="diagram" style="min-width:0">
+        <div class="diag-bar"><span class="chip c-grape">Live wiring puzzle</span><span class="muted small" id="pipeMsg">Data is stuck. Open the doors.</span></div>
+        <div id="pipes"></div>
+      </div>
+      <div class="toggles">
+        <div class="toggle-card"><div><b>Network access: Custom</b><div class="mono">*.supabase.co &nbsp; *.pinecone.io</div></div><label class="switch"><input type="checkbox" id="tgNet" aria-label="Allow Supabase and Pinecone in network access"></label></div>
+        <div class="toggle-card"><div><b>Supabase keys added</b><div class="mono">SUPABASE_URL &nbsp; SUPABASE_ANON_KEY</div></div><label class="switch"><input type="checkbox" id="tgSupa" aria-label="Add Supabase keys"></label></div>
+        <div class="toggle-card"><div><b>Pinecone key added</b><div class="mono">PINECONE_API_KEY</div></div><label class="switch"><input type="checkbox" id="tgPine" aria-label="Add Pinecone key"></label></div>
+        <div class="tipbox c-grape"><b>Why the gate?</b> The default network level, Trusted, lets the cloud computer reach package stores and GitHub. Supabase and Pinecone are not on that list.<sup><a href="#src-2">2</a></sup> Connectors are the exception: their traffic goes through Anthropic and skips the gate.<sup><a href="#src-2">2</a></sup></div>
+      </div>
+    </div>
+
+    <div class="routes">
+      <div class="card c-grape">
+        <span class="chip">Route A &middot; easiest</span>
+        <h3>Connect Supabase as a connector</h3>
+        <p class="muted small">Supabase is an official Claude connector.<sup><a href="#src-9">9</a></sup> Claude can then look at tables, run SQL and manage your project.</p>
+        <ol class="steps">
+          <li>Go to <code>claude.ai/customize/connectors</code>.</li>
+          <li>Find <b>Supabase</b>. Click <b>Connect</b>. Sign in to Supabase and approve.</li>
+          <li>Start a <b>new</b> session. Connectors load when a session starts.</li>
+          <li>Ask: <i>"Using the Supabase connector, list my tables."</i></li>
+        </ol>
+      </div>
+      <div class="card c-teal">
+        <span class="chip">Route B &middot; keys + network</span>
+        <h3>Give your app code the keys</h3>
+        <ol class="steps">
+          <li>In Supabase, open <b>Project Settings &rarr; API Keys</b>. Copy the Project URL and the <b>publishable (anon)</b> key.</li>
+          <li>In Claude Code, open the environment selector (the cloud icon), then <b>Edit</b>.</li>
+          <li><b>Pro or Max:</b> add the key under <b>API credentials</b>. Claude can use it but never sees it.<sup><a href="#src-2">2</a></sup> <b>Team or Enterprise:</b> use Environment variables, and only for non-secret or dev keys.</li>
+          <li>Set <b>Network access</b> to <b>Custom</b>. Add the domains below. Tick <b>Also include default list</b>.</li>
+          <li>Start a new session and give Claude the task.</li>
+        </ol>
+        <div class="codebox" id="envBox"><button class="btn sm ghost copy" data-copy="envBox">Copy</button><span class="c"># Environment variables (.env format)</span>
+<span class="k">SUPABASE_URL</span>=https://your-project.supabase.co
+<span class="k">SUPABASE_ANON_KEY</span>=<span class="s">your-publishable-key</span>
+<span class="k">PINECONE_INDEX</span>=docs-dev
+
+<span class="c"># Network access → Custom → Allowed domains</span>
+*.supabase.co
+*.pinecone.io</div>
+      </div>
+      <div class="card c-coral">
+        <span class="chip">Pinecone</span>
+        <h3>Add vector search</h3>
+        <ol class="steps">
+          <li>At <code>app.pinecone.io</code>, open <b>API Keys</b> and create a key.</li>
+          <li>Pro or Max: store it as an <b>API credential</b> for your Pinecone hosts. Otherwise use <code>PINECONE_API_KEY</code>.</li>
+          <li>Allow <code>*.pinecone.io</code> in Network access (Custom).</li>
+          <li>Make a separate <b>dev</b> index so tests can't harm real data.</li>
+          <li>Ask: <i>"Create a Pinecone index named docs-dev and add search over the files in docs/."</i></li>
+        </ol>
+        <p class="muted small">Pinecone also publishes an MCP server and a Claude Code plugin.<sup><a href="#src-11">11</a></sup></p>
+      </div>
+    </div>
+
+    <div class="auth-split">
+      <div class="card c-blue" style="display:grid;gap:8px"><span class="chip">Auth meaning #1</span><h4>How YOU log in to Claude Code</h4><p class="small muted">Your Claude account plus GitHub. GitHub tokens are handled by Anthropic's proxy outside the cloud computer.<sup><a href="#src-2">2</a></sup> Nothing to build.</p></div>
+      <div class="card c-green" style="display:grid;gap:8px"><span class="chip">Auth meaning #2</span><h4>How YOUR USERS log in to your app</h4><p class="small muted">Use Supabase Auth: email and password, magic links, or Google sign-in. Claude writes the sign-up and login code. Supabase stores the users.</p></div>
+    </div>
+
+    <div class="shield">
+      <div class="panel-head"><span data-ico="shield" style="color:var(--coral-ink);display:inline-grid"></span><h3>Five safety rules</h3></div>
+      <ul>
+        <li><b>Never paste a key into the chat.</b> Chats are saved.</li>
+        <li><b>Plain environment variables are not a safe.</b> Anyone who uses the environment can read them.<sup><a href="#src-2">2</a></sup> On Pro or Max, use API credentials.</li>
+        <li><b>Never commit a .env file.</b> Add <code>.env</code> to <code>.gitignore</code>.</li>
+        <li><b>Browser code gets the publishable (anon) key only.</b> Keep Row Level Security on. The secret (service_role) key bypasses it.</li>
+        <li><b>Give Claude dev keys, not production admin keys.</b> If a key leaks, replace (rotate) it right away.</li>
+      </ul>
+    </div>
+    <div class="next-row"><a class="btn c-grape" href="#l5">Next: web vs desktop</a></div>
+  </section>
+
+  <!-- LEVEL 5 -->
+  <section class="level c-coral" id="l5" aria-labelledby="l5t">
+    <div class="level-head">
+      <span class="tag" data-ico="swords">Level 5 &middot; Choose your fighter</span>
+      <h2 id="l5t">Web vs Desktop</h2>
+      <p class="lead">Same Claude, two homes. Web works in Anthropic's cloud. Desktop (the Code tab with <b>Local</b> selected) works on your own computer.<sup><a href="#src-1">1</a></sup><sup><a href="#src-5">5</a></sup></p>
+    </div>
+    <div class="vs prime" id="vs">
+      <div class="fighter c-blue">
+        <div class="art"><svg viewBox="0 0 200 150" aria-hidden="true"><g fill="var(--blue-d)"><rect x="30" y="62" width="140" height="70" rx="35"/><circle cx="68" cy="68" r="34"/><circle cx="110" cy="52" r="44"/><circle cx="146" cy="76" r="30"/></g><g fill="var(--cloud)"><rect x="35" y="67" width="130" height="60" rx="30"/><circle cx="68" cy="68" r="29"/><circle cx="110" cy="52" r="39"/><circle cx="146" cy="76" r="25"/></g><ellipse cx="92" cy="78" rx="7" ry="9" fill="#22301e"/><ellipse cx="128" cy="78" rx="7" ry="9" fill="#22301e"/><path d="M100 96q10 9 20 0" stroke="#22301e" stroke-width="4" fill="none" stroke-linecap="round"/></svg></div>
+        <span class="cls">Cloud class</span>
+        <div class="name">Nimbus &middot; Web</div>
+        <div class="stat"><span>Keeps working with your laptop shut</span><span class="meter"><i style="--v:100%"></i></span></div>
+        <div class="stat"><span>Start from your phone</span><span class="meter"><i style="--v:100%"></i></span></div>
+        <div class="stat"><span>Reach files on your computer</span><span class="meter"><i style="--v:6%"></i></span></div>
+        <div class="stat"><span>Local databases and localhost</span><span class="meter"><i style="--v:6%"></i></span></div>
+        <div class="stat"><span>Many tasks at once</span><span class="meter"><i style="--v:100%"></i></span></div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter c-grape">
+        <div class="art"><svg viewBox="0 0 200 150" aria-hidden="true"><rect x="36" y="18" width="128" height="92" rx="16" fill="var(--grape)" stroke="var(--grape-d)" stroke-width="6"/><rect x="50" y="31" width="100" height="66" rx="10" fill="var(--cloud)"/><ellipse cx="84" cy="60" rx="7" ry="9" fill="#22301e"/><ellipse cx="116" cy="60" rx="7" ry="9" fill="#22301e"/><path d="M90 76q10 9 20 0" stroke="#22301e" stroke-width="4" fill="none" stroke-linecap="round"/><rect x="92" y="110" width="16" height="18" fill="var(--grape-d)"/><rect x="62" y="126" width="76" height="12" rx="6" fill="var(--grape-d)"/></svg></div>
+        <span class="cls">Local class</span>
+        <div class="name">Desky &middot; Desktop</div>
+        <div class="stat"><span>Keeps working with your laptop shut</span><span class="meter"><i style="--v:6%"></i></span></div>
+        <div class="stat"><span>Start from your phone</span><span class="meter"><i style="--v:55%"></i></span></div>
+        <div class="stat"><span>Reach files on your computer</span><span class="meter"><i style="--v:100%"></i></span></div>
+        <div class="stat"><span>Local databases and localhost</span><span class="meter"><i style="--v:100%"></i></span></div>
+        <div class="stat"><span>Many tasks at once</span><span class="meter"><i style="--v:80%"></i></span></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Question</th><th scope="col">Web (cloud)</th><th scope="col">Desktop (Local)</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Where does Claude work?</th><td>A temporary cloud computer run by Anthropic</td><td>Your own computer</td></tr>
+          <tr><th scope="row">Must your computer stay on?</th><td><span class="yes">No.</span> Close the laptop and walk away.</td><td><span class="no">Yes.</span> Work stops when it sleeps.</td></tr>
+          <tr><th scope="row">Start or check from your phone?</th><td><span class="yes">Yes.</span> Code tab in the Claude app.</td><td>Yes, with Remote Control.</td></tr>
+          <tr><th scope="row">Sees files on your computer?</th><td><span class="no">No.</span> Only your repo and project uploads.</td><td><span class="yes">Yes.</span></td></tr>
+          <tr><th scope="row">Needs GitHub?</th><td>Yes, to clone and push. (<code>claude --cloud</code> can upload a local repo.)</td><td>No.</td></tr>
+          <tr><th scope="row">Local database, localhost, VPN?</th><td><span class="no">No.</span></td><td><span class="yes">Yes.</span></td></tr>
+          <tr><th scope="row">Many tasks at once?</th><td>Yes. Each session gets its own cloud computer.</td><td>Yes. Parallel sessions use git worktrees.</td></tr>
+          <tr><th scope="row">Where do secret keys go?</th><td>Environment settings: API credentials (Pro/Max) or variables</td><td>Your computer: a git-ignored <code>.env</code> file</td></tr>
+          <tr><th scope="row">Best for</th><td>Hand-off tasks you review as pull requests</td><td>Hands-on work with local tools and private files</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted small" style="margin-top:12px">Move between them: <code>claude --cloud "task"</code> sends a new task to the cloud. <code>claude --teleport</code> pulls a cloud session and its branch into your terminal.<sup><a href="#src-1">1</a></sup> The Desktop app can also start cloud sessions.</p>
+
+    <div class="card picker">
+      <div class="panel-head"><h3>Which fighter fits you?</h3><span class="xp-chip">+30 XP</span></div>
+      <div id="picker"></div>
+      <div class="panel c-coral result" id="pickResult" aria-live="polite"></div>
+    </div>
+    <div class="next-row"><a class="btn c-coral" href="#l6">Next: the daily loop</a></div>
+  </section>
+
+  <!-- LEVEL 6 -->
+  <section class="level c-green" id="l6" aria-labelledby="l6t">
+    <div class="level-head">
+      <span class="tag" data-ico="loop">Level 6 &middot; How to work with it</span>
+      <h2 id="l6t">The daily loop</h2>
+      <p class="lead">Every task runs the same six-step loop. Tap each step for the move that makes it work.</p>
+    </div>
+    <div class="loop-layout">
+      <div class="diagram" style="padding:8px"><div id="loop"></div></div>
+      <div class="panel c-green" id="loopPanel" aria-live="polite"></div>
+    </div>
+    <div class="prompt-pairs" id="pairs"></div>
+    <div class="next-row"><a class="btn" href="#l7">Next: magic wand and traps</a></div>
+  </section>
+
+  <!-- LEVEL 7 -->
+  <section class="level c-yellow" id="l7" aria-labelledby="l7t">
+    <div class="level-head">
+      <span class="tag" data-ico="wand">Level 7 &middot; Dream it, then break it</span>
+      <h2 id="l7t">Magic wand and the trap room</h2>
+    </div>
+    <div class="wand">
+      <span class="spark" style="right:8%;top:18%"></span><span class="spark" style="right:22%;top:8%;animation-delay:-.8s"></span><span class="spark" style="right:14%;top:40%;animation-delay:-1.5s"></span>
+      <span class="chip c-grape" style="justify-self:start">Magic wand vision</span>
+      <p class="frame">If you had a magic wand, even if you had to suspend the laws of gravity, here is how I would imagineer the solution.</p>
+      <p>Monday, 7:40 a.m. You type one sentence into the Claude app on your phone while the coffee brews: <i>"Add Google sign-in to the client portal."</i> A fresh cloud computer starts and clones your repo. Claude reads CLAUDE.md, which already names your stack, your rules and your test command. The <b>portal-dev</b> environment gives it network access to your Supabase project and a dev key it uses without ever seeing. The Supabase connector shows Claude the real tables. It writes the code, runs the tests, and pushes a branch.</p>
+      <p>Your phone buzzes on the train: the pull request is ready, with a plain-English summary. You ask one question, get the answer, and tap <b>Merge</b>. Your laptop never opens. Two more sessions run at the same time, one writing docs and one fixing a bug, each in its own cloud computer, each on its own branch. Your users' data sits safe in Supabase, your search index sits in Pinecone, and every rule you taught Claude lives in the repo.</p>
+    </div>
+
+    <div class="level-head" style="margin-top:40px;margin-bottom:0">
+      <h3 style="font-size:28px">Brutal pre-mortem: every way this fails</h3>
+      <p class="lead" style="margin-top:8px">Ten traps. Each one shows how likely it is. Press <b>Disarm</b> to reveal the fix and earn XP.</p>
+    </div>
+    <div class="traps" id="traps"></div>
+    <div class="next-row"><a class="btn c-yellow" href="#l8">Next: boss quiz</a></div>
+  </section>
+
+  <!-- LEVEL 8 -->
+  <section class="level c-coral" id="l8" aria-labelledby="l8t">
+    <div class="level-head">
+      <span class="tag" data-ico="crown">Level 8 &middot; Boss quiz</span>
+      <h2 id="l8t">Beat the boss</h2>
+      <p class="lead">Six questions. Three hearts. Score five or more to earn the Boss Slayer badge and your certificate.</p>
+    </div>
+    <div class="card quiz" id="quiz"></div>
+  </section>
+
+  <!-- TROPHIES -->
+  <section class="level c-blue" id="l9" aria-labelledby="l9t">
+    <div class="level-head">
+      <span class="tag" data-ico="trophy">Trophy case</span>
+      <h2 id="l9t">Your badges</h2>
+      <p class="lead">Badges light up as you earn them. Your progress is saved in this browser only.</p>
+    </div>
+    <div class="shelf" id="shelf"></div>
+    <div class="cert" id="cert">
+      <span class="chip c-yellow">Certificate</span>
+      <div class="big">Certified Cloud Captain</div>
+      <p class="muted">Awarded to</p>
+      <input id="certName" type="text" placeholder="Type your name" aria-label="Your name for the certificate" maxlength="40">
+      <p class="muted small">for mastering projects, storage, databases, login and the web vs desktop choice in Claude Code.</p>
+      <button class="btn c-yellow" id="certParty" data-ico="party">Celebrate</button>
+    </div>
+    <div class="party">
+      <div class="panel-head"><h3>Confetti lab</h3><span class="muted small">Five ways to celebrate. Hidden bonus: type <code>merge</code> anywhere on the page.</span></div>
+      <div class="row">
+        <button class="btn sm" data-fx="burst">Burst</button>
+        <button class="btn sm c-blue" data-fx="cannons">Side cannons</button>
+        <button class="btn sm c-grape" data-fx="rain">Confetti rain</button>
+        <button class="btn sm c-coral" data-fx="fireworks">Fireworks</button>
+        <button class="btn sm c-yellow" data-fx="coins">Gold coins</button>
+      </div>
+      <div class="row"><button class="btn sm ghost" id="resetAll">Reset my progress</button><span class="muted small" id="resetMsg"></span></div>
+    </div>
+  </section>
+
+  <section class="sources" aria-labelledby="srcT">
+    <h3 id="srcT">Sources</h3>
+    <ol>
+      <li id="src-1"><a href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">Claude Code on the web</a> &mdash; plans, mobile, <code>--cloud</code>, <code>--teleport</code>, sessions</li>
+      <li id="src-2"><a href="https://code.claude.com/docs/en/cloud-environments" target="_blank" rel="noopener">Cloud environments</a> &mdash; network levels, variables, API credentials, setup scripts, idle and reclaimed VMs</li>
+      <li id="src-3"><a href="https://code.claude.com/docs/en/web-quickstart" target="_blank" rel="noopener">Web quickstart</a> &mdash; first-time setup and GitHub</li>
+      <li id="src-4"><a href="https://code.claude.com/docs/en/claude-projects" target="_blank" rel="noopener">Projects in Claude Code</a> &mdash; public beta, instructions, memory, Library uploads</li>
+      <li id="src-5"><a href="https://code.claude.com/docs/en/desktop" target="_blank" rel="noopener">Claude Code Desktop</a> &mdash; local sessions, worktrees</li>
+      <li id="src-6"><a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">Memory and CLAUDE.md</a></li>
+      <li id="src-7"><a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener">MCP in Claude Code</a> &mdash; <code>.mcp.json</code> project servers</li>
+      <li id="src-8"><a href="https://support.claude.com/en/articles/9517075-what-are-projects" target="_blank" rel="noopener">What are Projects? (claude.ai chat)</a></li>
+      <li id="src-9"><a href="https://supabase.com/blog/claude-connector" target="_blank" rel="noopener">Supabase is now an official Claude connector</a></li>
+      <li id="src-10"><a href="https://supabase.com/docs/guides/getting-started/mcp" target="_blank" rel="noopener">Supabase MCP server guide</a></li>
+      <li id="src-11"><a href="https://docs.pinecone.io/guides/operations/mcp-server" target="_blank" rel="noopener">Pinecone MCP server</a></li>
+    </ol>
+    <p class="foot">Facts checked against the official docs on October 2, 2026. Menu names move over time. If a button looks different, look for the closest match. Projects in Claude Code are a public beta on Pro and Max and still rolling out, so you may not see them yet. Design template: Refero's Duolingo style reference.</p>
+  </section>
+
+</div>
+</main>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const NS = "http://www.w3.org/2000/svg";
+function S(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function H(tag, attrs = {}, html = "") { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (html) e.innerHTML = html; return e; }
+
+/* ---------- icons ---------- */
+const ICO = {
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
+  map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',
+  flow:'<rect x="3" y="3" width="8" height="6" rx="2"/><rect x="13" y="15" width="8" height="6" rx="2"/><path d="M7 9v4a2 2 0 0 0 2 2h4"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  swords:'<path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5M5 14l4 4M7 17l-3 3M3 19l2 2"/>',
+  loop:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/>',
+  wand:'<path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5"/>',
+  crown:'<path d="M2 18h20M3 7l5 5 4-7 4 7 5-5-2 11H5z"/>',
+  trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  check:'<path d="M5 12l5 5L20 7"/>',
+  play:'<path d="M7 4v16l13-8z"/>',
+  pause:'<path d="M7 4h4v16H7zM14 4h4v16h-4z"/>',
+  party:'<path d="M5.8 11.3 2 22l10.7-3.8M4 3h.01M22 8h.01M15 2h.01M22 20h.01M22 2l-2.2.8a2.9 2.9 0 0 0-2 3.1c.1.9-.6 1.6-1.4 1.6H16c-.9 0-1.6.6-1.8 1.4L14 10M22 13l-.8-.3c-.9-.3-1.8.2-2 1.1-.1.7-.7 1.2-1.4 1.2H17M11 2l.3.8c.3.9-.2 1.8-1.1 2-.7.1-1.2.7-1.2 1.4V7M11 13c1.9 1.9 2.8 4.2 2 5-.8.8-3.1-.1-5-2s-2.8-4.2-2-5c.8-.8 3.1.1 5 2z"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  wave:'<path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
+  heart:'<path d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 3 5 6.5 5c2 0 3.6 1.1 5.5 3 1.9-1.9 3.5-3 5.5-3C21 5 23.1 8.6 21.6 11.9 19.5 16.4 12 21 12 21z"/>'
+};
+function icon(name, fill) { return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="${fill ? "currentColor" : "none"}" stroke="${fill ? "none" : "currentColor"}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${ICO[name] || ""}</svg>`; }
+$$("[data-ico]").forEach(el => { const n = el.dataset.ico; el.insertAdjacentHTML("afterbegin", icon(n, n === "play" || n === "pause")); });
+
+/* ---------- storage (per-viewer convenience only) ---------- */
+const KEY = "cc-web-quest-v1";
+const store = {
+  get() { try { const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+  set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} },
+  clear() { try { localStorage.removeItem(KEY); } catch (e) {} }
+};
+let ST = Object.assign({ xp: 0, done: {}, badges: {}, name: "", sort: {}, traps: {}, checks: {} }, store.get() || {});
+const save = () => store.set(ST);
+
+/* ---------- confetti engine ---------- */
+const cv = $("#fx"), cx = cv.getContext("2d");
+let W = 0, Hh = 0, DPR = 1, parts = [], fxRaf = 0;
+function size() { DPR = Math.min(2, devicePixelRatio || 1); W = innerWidth; Hh = innerHeight; cv.width = W * DPR; cv.height = Hh * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+addEventListener("resize", size); size();
+const PAL = ["#58cc02", "#1cb0f6", "#ffc800", "#a570ff", "#ff6b5e", "#14c2b0", "#ff86d0"];
+const rand = (a, b) => a + Math.random() * (b - a);
+function spawn(x, y, o = {}) {
+  let n = o.n ?? 90; if (reduce) n = Math.ceil(n / 3);
+  const colors = o.colors || PAL, shapes = o.shapes || ["rect", "rect", "circle", "ribbon", "star"];
+  for (let i = 0; i < n; i++) {
+    const a = ((o.angle ?? -90) + (Math.random() - .5) * (o.spread ?? 70)) * Math.PI / 180;
+    const v = rand(...(o.speed || [7, 14]));
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: o.gravity ?? .3, d: o.decay ?? .985, s: rand(...(o.size || [7, 12])), r: Math.random() * 6.28, vr: rand(-.25, .25), tl: Math.random() * 6.28, vt: rand(.05, .16), c: colors[(Math.random() * colors.length) | 0], sh: shapes[(Math.random() * shapes.length) | 0], life: rand(...(o.life || [120, 190])), t: 0 });
+  }
+  if (!fxRaf) fxRaf = requestAnimationFrame(tick);
+}
+function star(r) { cx.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * .45 : r, a = i * Math.PI / 5 - Math.PI / 2; cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } cx.closePath(); cx.fill(); }
+function tick() {
+  cx.clearRect(0, 0, W, Hh);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.t++; p.vx *= p.d; p.vy = p.vy * p.d + p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.tl += p.vt;
+    if (p.t > p.life || p.y > Hh + 40) { parts.splice(i, 1); continue; }
+    const sy = Math.abs(Math.cos(p.tl));
+    cx.save(); cx.globalAlpha = Math.max(0, Math.min(1, (p.life - p.t) / 30)); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c;
+    if (p.sh === "rect") cx.fillRect(-p.s / 2, -p.s * sy / 3, p.s, p.s * sy * .66 + 1);
+    else if (p.sh === "circle") { cx.beginPath(); cx.arc(0, 0, p.s / 2.4, 0, 6.283); cx.fill(); }
+    else if (p.sh === "ribbon") cx.fillRect(-p.s * .16, -p.s, p.s * .32, p.s * 2 * sy + 1);
+    else if (p.sh === "star") star(p.s * .7);
+    else if (p.sh === "coin") { cx.scale(sy + .15, 1); cx.beginPath(); cx.arc(0, 0, p.s * .8, 0, 6.283); cx.fill(); cx.strokeStyle = "#c98f00"; cx.lineWidth = 2; cx.stroke(); cx.fillStyle = "#fff3b0"; cx.fillRect(-1.5, -p.s * .4, 3, p.s * .8); }
+    cx.restore();
+  }
+  fxRaf = parts.length ? requestAnimationFrame(tick) : (cx.clearRect(0, 0, W, Hh), 0);
+}
+function centerOf(el) { if (!el) return [W / 2, Hh / 2]; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
+const FX = {
+  burst(el) { const [x, y] = centerOf(el); spawn(x, y, { n: 120, spread: 110, speed: [8, 16] }); },
+  cannons() { spawn(0, Hh, { n: 100, angle: -58, spread: 40, speed: [16, 26] }); spawn(W, Hh, { n: 100, angle: -122, spread: 40, speed: [16, 26] }); },
+  rain() { let k = 0; const id = setInterval(() => { for (let i = 0; i < 12; i++) spawn(rand(0, W), -20, { n: 1, angle: 90, spread: 30, speed: [1, 4], gravity: .12, life: [260, 340] }); if (++k > 18) clearInterval(id); }, 70); },
+  fireworks() { let k = 0; const id = setInterval(() => { const c = PAL[(Math.random() * PAL.length) | 0]; spawn(rand(W * .15, W * .85), rand(Hh * .15, Hh * .5), { n: 70, spread: 360, speed: [3, 9], gravity: .1, colors: [c, "#ffffff", c], shapes: ["circle", "star"], life: [70, 110] }); if (++k > 5) clearInterval(id); }, 260); },
+  coins() { let k = 0; const id = setInterval(() => { for (let i = 0; i < 6; i++) spawn(rand(0, W), -20, { n: 1, angle: 90, spread: 20, speed: [2, 5], gravity: .2, colors: ["#ffc800", "#ffd84d", "#f2b600"], shapes: ["coin"], size: [9, 13], life: [200, 260] }); if (++k > 16) clearInterval(id); }, 80); }
+};
+$$("[data-fx]").forEach(b => b.addEventListener("click", () => FX[b.dataset.fx](b)));
+$("#hudConfetti").addEventListener("click", e => FX.burst(e.currentTarget));
+$("#heroConfetti").addEventListener("click", e => FX.burst(e.currentTarget));
+const nimbus = $("#nimbus");
+function nimbusParty() { nimbus.classList.remove("jump"); void nimbus.getBoundingClientRect(); nimbus.classList.add("jump"); FX.burst(nimbus); }
+nimbus.addEventListener("click", nimbusParty);
+nimbus.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nimbusParty(); } });
+let typed = ""; addEventListener("keydown", e => { if (e.target.matches("input,textarea")) return; typed = (typed + (e.key || "")).slice(-5).toLowerCase(); if (typed === "merge") { FX.fireworks(); toast("Merged! Secret fireworks unlocked.", true); } });
+
+/* ---------- theme toggle ---------- */
+const root = document.documentElement;
+function isDark() { const t = root.getAttribute("data-theme"); return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+function themeIcon() { const b = $("#themeBtn"); b.innerHTML = icon(isDark() ? "sun" : "moon"); }
+$("#themeBtn").addEventListener("click", () => { root.setAttribute("data-theme", isDark() ? "light" : "dark"); themeIcon(); });
+themeIcon();
+
+/* ---------- XP, ranks, badges ---------- */
+const BADGES = [
+  { id: "qa", n: "Quick Draw", d: "Flipped all six quick answers", i: "bolt", c: "yellow" },
+  { id: "map", n: "Map Reader", d: "Explored every branch of the map", i: "map", c: "green" },
+  { id: "flow", n: "Flow Master", d: "Played the setup flow to the end", i: "flow", c: "blue" },
+  { id: "setup", n: "Ready to Launch", d: "Ticked the whole setup checklist", i: "check", c: "teal" },
+  { id: "vault", n: "Vault Keeper", d: "Sorted all ten items correctly", i: "lock", c: "teal" },
+  { id: "pipes", n: "Pipe Fitter", d: "Got data flowing to both databases", i: "db", c: "grape" },
+  { id: "fighter", n: "Fighter Picked", d: "Found your best tool", i: "swords", c: "coral" },
+  { id: "loop", n: "Loop Runner", d: "Visited every step of the loop", i: "loop", c: "green" },
+  { id: "traps", n: "Trap Disarmer", d: "Disarmed all ten traps", i: "shield", c: "yellow" },
+  { id: "boss", n: "Boss Slayer", d: "Scored 5 or more on the boss quiz", i: "crown", c: "coral" }
+];
+const MAX = 60 + 60 + 60 + 30 + 100 + 60 + 30 + 30 + 50 + 90 + BADGES.length * 20;
+const RANKS = [[0, "Rookie"], [150, "Explorer"], [330, "Builder"], [520, "Navigator"], [700, "Cloud Captain"]];
+const rankOf = xp => RANKS.filter(r => xp >= r[0]).pop()[1];
+$("#xpbar").setAttribute("aria-valuemax", MAX);
+function renderHUD() {
+  $("#xpnum").textContent = ST.xp; $("#xpfill").style.width = Math.min(100, ST.xp / MAX * 100) + "%";
+  $("#xpbar").setAttribute("aria-valuenow", ST.xp); $("#rank").textContent = rankOf(ST.xp);
+}
+function toast(msg, gold) { const t = H("div", { class: "toast" + (gold ? " gold" : "") }); t.textContent = msg; $("#toasts").appendChild(t); setTimeout(() => t.remove(), 2800); while ($("#toasts").children.length > 3) $("#toasts").firstChild.remove(); }
+function floatXP(xp, el) { const [x, y] = centerOf(el); const f = H("div", { class: "xpfloat" }); f.textContent = "+" + xp + " XP"; f.style.left = (x - 30) + "px"; f.style.top = (y - 20) + "px"; document.body.appendChild(f); setTimeout(() => f.remove(), 1300); }
+function award(key, xp, el) {
+  if (ST.done[key]) return false;
+  const before = rankOf(ST.xp); ST.done[key] = 1; ST.xp += xp; save(); renderHUD(); floatXP(xp, el);
+  const after = rankOf(ST.xp); if (after !== before) { toast("Rank up! You are now: " + after, true); FX.cannons(); }
+  return true;
+}
+function badge(id, el) {
+  if (ST.badges[id]) return;
+  const b = BADGES.find(x => x.id === id); ST.badges[id] = 1; save();
+  toast("Badge earned: " + b.n, true); FX.burst(el || $("#hudConfetti"));
+  award("badge-" + id, 20, el || $("#hudConfetti"));
+  renderShelf(); renderPath();
+  if (BADGES.every(x => ST.badges[x.id])) setTimeout(() => { toast("All ten badges! Legendary.", true); FX.fireworks(); }, 900);
+}
+
+/* ---------- quest path ---------- */
+const LEVELS = [
+  { id: "l0", n: "Quick answers", c: "yellow", i: "bolt", b: "qa" },
+  { id: "l1", n: "The big map", c: "green", i: "map", b: "map" },
+  { id: "l2", n: "Setup flow", c: "blue", i: "flow", b: "flow" },
+  { id: "l3", n: "Vault or sand", c: "teal", i: "lock", b: "vault" },
+  { id: "l4", n: "Data + login", c: "grape", i: "db", b: "pipes" },
+  { id: "l5", n: "Web vs Desktop", c: "coral", i: "swords", b: "fighter" },
+  { id: "l6", n: "Daily loop", c: "green", i: "loop", b: "loop" },
+  { id: "l7", n: "Wand + traps", c: "yellow", i: "wand", b: "traps" },
+  { id: "l8", n: "Boss quiz", c: "coral", i: "crown", b: "boss" },
+  { id: "l9", n: "Trophies", c: "blue", i: "trophy", b: "*" }
+];
+function renderPath() {
+  const ol = $("#pathList"); ol.innerHTML = "";
+  LEVELS.forEach(L => {
+    const done = L.b === "*" ? BADGES.every(x => ST.badges[x.id]) : !!ST.badges[L.b];
+    const li = H("li", { class: done ? "done" : "" });
+    li.innerHTML = `<button class="pnode c-${L.c}" aria-label="Go to ${L.n}${done ? " (complete)" : ""}">${icon(L.i)}<span class="tick">${icon("check")}</span></button><span class="plabel">${L.n}</span>`;
+    li.querySelector("button").addEventListener("click", () => document.getElementById(L.id).scrollIntoView({ behavior: reduce ? "auto" : "smooth" }));
+    ol.appendChild(li);
+  });
+}
+
+/* ---------- LEVEL 0: quick answers ---------- */
+const QA = [
+  { c: "green", q: "Do I need to create a project?", a: "No. You need a GitHub repo and an environment. Projects are optional.",
+    back: `<p class="body">A normal cloud session runs on one GitHub repo. You pick it when you start.<sup><a href="#src-1">1</a></sup></p><p class="body">Claude Code also has an optional <b>Projects</b> feature. It is a public beta on Pro and Max, still rolling out.<sup><a href="#src-4">4</a></sup> A project is one conversation that runs many cloud sessions and shares instructions, memory and files across them.</p><p class="body"><b>Start without one.</b> Add a project when you have a stream of related tasks.</p>` },
+  { c: "blue", q: "Are my knowledge files stored somewhere?", a: "Yes. Where they live depends on which door you used.",
+    back: `<ul class="body"><li><b>Your repo:</b> CLAUDE.md and a <code>docs/</code> folder live on GitHub. Every session reads CLAUDE.md.<sup><a href="#src-6">6</a></sup></li><li><b>A Claude Code project:</b> files you add sit on its Library tab, plus project instructions and memory, on Anthropic's servers.<sup><a href="#src-4">4</a></sup></li><li><b>A claude.ai chat Project:</b> knowledge files are stored with that chat Project.<sup><a href="#src-8">8</a></sup> It is a separate feature, so don't count on code sessions reading it.</li></ul>` },
+  { c: "yellow", q: "Are they persistent?", a: "The saved places, yes. The cloud computer, no.",
+    back: `<p class="body">GitHub, project files and environment settings stay until you delete them.</p><p class="body">The cloud computer is temporary. After a few idle minutes it <b>pauses</b> with your files saved. Later it can be <b>reclaimed</b>. Then a fresh one is built, and only what Claude pushed to GitHub survives.<sup><a href="#src-2">2</a></sup></p><p class="body"><b>Rule:</b> end every task with "commit and push."</p>` },
+  { c: "grape", q: "Can I add login and a database like Supabase or Pinecone?", a: "Yes. They live outside the cloud computer, so your data stays put.",
+    back: `<p class="body">Supabase = database plus user login. Pinecone = vector search for AI memory. Three ways in:</p><ul class="body"><li><b>Connector:</b> Supabase is an official Claude connector.<sup><a href="#src-9">9</a></sup></li><li><b>Keys:</b> on Pro or Max, an API credential Claude uses without seeing. Otherwise an environment variable.</li><li><b>Network:</b> set access to Custom and allow <code>*.supabase.co</code> or <code>*.pinecone.io</code>.<sup><a href="#src-2">2</a></sup></li></ul>` },
+  { c: "coral", q: "How is it different from Claude Code Desktop?", a: "Web runs in Anthropic's cloud. Desktop runs on your computer.",
+    back: `<p class="body"><b>Web</b> keeps working with your laptop closed, starts from your phone, and needs GitHub.</p><p class="body"><b>Desktop</b> (the Code tab with Local selected) works on the files on your computer. It reaches local databases and localhost, and it stops when your computer sleeps.</p><p class="body">The Desktop app can also start cloud sessions.<sup><a href="#src-2">2</a></sup></p>` },
+  { c: "teal", q: "Can I use it from my phone?", a: "Yes. Open the Code tab in the Claude app.",
+    back: `<p class="body">Cloud sessions run on Anthropic's computers, so your phone works as the remote control.<sup><a href="#src-1">1</a></sup> Start a task, lock the phone, and come back to a pull request.</p><p class="body">To steer a session that runs on your own computer from your phone, use <b>Remote Control</b>.</p>` }
+];
+function renderQA() {
+  const g = $("#qaGrid"); g.innerHTML = "";
+  QA.forEach((x, i) => {
+    const card = H("div", { class: `flip c-${x.c}` });
+    card.innerHTML = `<div class="flip-inner">
+      <div class="face front"><div class="row" style="justify-content:space-between"><span class="qnum">${i + 1}</span><span class="xp-chip">+10 XP</span></div><div class="q">${x.q}</div><div class="a grow">${x.a}</div><button class="btn sm ghost flipbtn" aria-expanded="false">Full story</button></div>
+      <div class="face back"><div class="q">${x.q}</div><div class="grow" style="display:grid;gap:8px;align-content:start">${x.back}</div><button class="btn sm ghost flipbtn">Flip back</button></div></div>`;
+    const [fb, bb] = $$(".flipbtn", card);
+    const front = $(".front", card), back = $(".back", card);
+    function setFace(on) { card.classList.toggle("on", on); fb.setAttribute("aria-expanded", on); front.inert = on; back.inert = !on; (on ? bb : fb).focus({ preventScroll: true }); }
+    back.inert = true;
+    fb.addEventListener("click", () => { setFace(true); if (award("qa" + i, 10, fb)) { if (QA.every((_, k) => ST.done["qa" + k])) badge("qa", card); } });
+    bb.addEventListener("click", () => setFace(false));
+    g.appendChild(card);
+  });
+}
+
+/* ---------- shared tween ---------- */
+const tweens = new Set(); let twRaf = 0;
+function tween(dur, fn, done) { const t = { t0: performance.now(), dur: Math.max(1, dur), fn, done }; tweens.add(t); if (!twRaf) twRaf = requestAnimationFrame(twLoop); return t; }
+function twLoop(now) { for (const t of [...tweens]) { const k = Math.min(1, (now - t.t0) / t.dur); t.fn(k); if (k >= 1) { tweens.delete(t); t.done && t.done(); } } twRaf = tweens.size ? requestAnimationFrame(twLoop) : 0; }
+function polyLen(pts) { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; }
+function polyAt(pts, k) { const L = polyLen(pts) * k; let acc = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (acc + l >= L) { const f = l ? (L - acc) / l : 0; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; } acc += l; } return pts[pts.length - 1]; }
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+function bez(p0, p1, p2, p3, n = 14) { const out = []; for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; out.push([u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]); } return out; }
+
+/* svg node helper: shadow + body + centered text lines */
+function svgNode(parent, { x, y, w, h, rx = 14, lines = [], sub, fs = 16, cls = "", lh, shadow = 4 }) {
+  const g = S("g", { class: "node " + cls }, parent);
+  if (shadow) S("rect", { x: x - w / 2, y: y - h / 2 + shadow, width: w, height: h, rx, class: "sh" }, g);
+  S("rect", { x: x - w / 2, y: y - h / 2, width: w, height: h, rx, class: "bd" }, g);
+  const all = lines.length + (sub ? 1 : 0); lh = lh || fs * 1.2;
+  const t = S("text", { class: "svg-text", "font-size": fs, "text-anchor": "middle" }, g);
+  lines.forEach((l, i) => { const ts = S("tspan", { x, y: y - (all - 1) * lh / 2 + i * lh, dy: ".35em" }, t); ts.textContent = l; });
+  if (sub) { const st = S("text", { class: "svg-sub", "font-size": fs * .78, "text-anchor": "middle", x, y: y - (all - 1) * lh / 2 + lines.length * lh, dy: ".35em" }, g); st.textContent = sub; }
+  return g;
+}
+
+/* ---------- LEVEL 1: mind map ---------- */
+const MM = [
+  { id: "repo", c: "green", t: "GitHub repo", leaves: [["Picked when", "you start"], ["Fresh copy", "every session"], ["CLAUDE.md =", "house rules"]],
+    body: "Every cloud session starts by copying (cloning) a GitHub repo into a fresh cloud computer. Claude reads CLAUDE.md from the repo at the start. Work only becomes permanent when Claude commits and pushes it back. Public repos work right away. Private repos need the Claude GitHub App installed." },
+  { id: "env", c: "blue", t: "Environment", leaves: [["Network: None,", "Trusted, Custom, Full"], ["Variables +", "API credentials"], ["Setup script", "(cached)"]],
+    body: "An environment is a saved settings bundle that every session reuses. Network access decides which websites the cloud computer can reach. Trusted is the default. Environment variables hold settings like SUPABASE_URL, and anyone who uses the environment can read them. API credentials (Pro and Max) hold secret keys Claude never sees. The setup script installs tools before Claude starts, and the result is cached for later sessions." },
+  { id: "session", c: "yellow", t: "Session", leaves: [["One chat + one", "cloud computer"], ["Pauses when", "idle"], ["Can be", "reclaimed later"]],
+    body: "A session is one conversation plus one temporary cloud computer. Watch Claude work live, reply to steer it, or close your laptop. After a few idle minutes the computer pauses with files saved, and your next message wakes it. A paused computer can later be reclaimed. Reopening then builds a fresh one, and anything not pushed is gone. The chat itself stays in your sidebar until you archive or delete it." },
+  { id: "results", c: "coral", t: "Results", leaves: [["Commits on", "a branch"], ["Pull request", "(PR)"], ["You review", "and merge"]],
+    body: "Claude saves work as commits on a branch and pushes it to GitHub. You create a pull request from claude.ai/code, or Claude opens one. You read it and click Merge. Want to keep going on your own machine? Run claude --teleport to pull the session and its branch into your terminal." },
+  { id: "connect", c: "grape", t: "Connectors", leaves: [["Supabase, Gmail,", "Drive, more"], ["Turn on at", "claude.ai"], ["Skip the", "network gate"]],
+    body: "Connectors plug outside apps into Claude using MCP. Turn them on at claude.ai/customize/connectors, then start a new session, because connectors load when a session starts. Connector traffic goes through Anthropic, so it doesn't need your network allowlist. Developers can also commit a .mcp.json file so every session loads the same tools." },
+  { id: "data", c: "teal", t: "Outside data", leaves: [["Supabase:", "database + login"], ["Pinecone:", "vector search"], ["Stays when", "sessions end"]],
+    body: "Databases live on their own servers, outside the cloud computer, so your data survives every session. Supabase gives you a Postgres database, user login (Auth) and file storage. Pinecone stores vectors, which are numbers that capture meaning, for AI search. Claude writes the code. You give it keys and network access." }
+];
+let mmSel = 0, mmMode = "";
+function renderMap(force) {
+  const host = $("#mm"); const wide = host.clientWidth >= 760; const mode = wide ? "w" : "n";
+  if (mode === mmMode && !force) return; mmMode = mode; host.innerHTML = "";
+  const Wv = wide ? 1100 : 400, Hv = wide ? 600 : 480;
+  const svg = S("svg", { viewBox: `0 0 ${Wv} ${Hv}`, class: "mm", role: "group", "aria-label": "Mind map of Claude Code on the web. Center: Claude Code on the web. Six branches: GitHub repo, Environment, Session, Results, Connectors, Outside data." }, host);
+  const gE = S("g", {}, svg), gN = S("g", {}, svg);
+  const C = { x: Wv / 2, y: Hv / 2, w: wide ? 220 : 172, h: wide ? 96 : 84 };
+  let pos;
+  if (wide) { const ys = [130, 300, 470]; pos = [[780, ys[0]], [780, ys[1]], [780, ys[2]], [320, ys[2]], [320, ys[1]], [320, ys[0]]]; }
+  else { pos = [[200, 52], [328, 148], [328, 332], [200, 428], [72, 332], [72, 148]]; }
+  const BW = wide ? 176 : 118, BH = wide ? 56 : 46;
+  MM.forEach((b, i) => {
+    const [bx, by] = pos[i]; const gc = S("g", { class: "c-" + b.c }, gE);
+    let d;
+    if (wide) { const right = bx > C.x; const x1 = right ? C.x + C.w / 2 - 6 : C.x - C.w / 2 + 6, y1 = C.y + (by - C.y) * .22, x2 = right ? bx - BW / 2 : bx + BW / 2; const mx = (x1 + x2) / 2; d = `M${x1} ${y1}C${mx} ${y1} ${mx} ${by} ${x2} ${by}`; }
+    else { d = `M${C.x} ${C.y}Q${bx} ${C.y} ${bx} ${by}`; }
+    const p = S("path", { d, class: "edge" }, gc); p.style.setProperty("--d", (.15 + i * .12) + "s");
+    if (wide) {
+      const right = bx > C.x, lx = right ? 1000 : 100, LW = 180;
+      b.leaves.forEach((lf, j) => {
+        const ly = by + (j - 1) * 58, x1 = right ? bx + BW / 2 : bx - BW / 2, x2 = right ? lx - LW / 2 : lx + LW / 2, mx = (x1 + x2) / 2;
+        const lp = S("path", { d: `M${x1} ${by}C${mx} ${by} ${mx} ${ly} ${x2} ${ly}`, class: "edge leaf" }, gc); lp.style.setProperty("--d", (.95 + i * .08 + j * .05) + "s");
+        const ln = svgNode(S("g", { class: "c-" + b.c }, gN), { x: lx, y: ly, w: LW, h: 46, rx: 12, lines: lf, fs: 14, lh: 16, cls: "leafn", shadow: 0 }); ln.style.setProperty("--d", (1.2 + i * .08 + j * .05) + "s");
+      });
+    }
+    const gb = S("g", { class: "c-" + b.c }, gN);
+    const n = svgNode(gb, { x: bx, y: by, w: BW, h: BH, rx: BH / 2, lines: [b.t], fs: wide ? 18 : 14.5, cls: "branch" + (i === mmSel ? " sel" : "") + (ST.done["mm-" + b.id] ? " seen" : "") });
+    S("circle", { cx: bx + BW / 2 - 8, cy: by - BH / 2 + 8, r: 7, class: "badge-dot", "stroke-width": 3 }, n);
+    n.style.setProperty("--d", (.45 + i * .12) + "s");
+    n.setAttribute("tabindex", "0"); n.setAttribute("role", "button"); n.setAttribute("aria-label", "Open branch: " + b.t);
+    n.addEventListener("click", () => selectBranch(i, n));
+    n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectBranch(i, n); } });
+  });
+  svgNode(gN, { x: C.x, y: C.y, w: C.w, h: C.h, rx: 28, lines: ["Claude Code", "on the web"], sub: "your cloud workshop", fs: wide ? 21 : 17, cls: "center", shadow: 5 }).style.setProperty("--d", "0s");
+  $$(".edge", svg).forEach(p => p.style.setProperty("--len", Math.ceil(p.getTotalLength())));
+}
+function playMap() { const svg = $("#mm svg"); if (!svg || reduce) return; svg.classList.remove("play"); void svg.getBoundingClientRect(); svg.classList.add("play"); }
+function renderMapChips() {
+  const c = $("#mmChips"); c.innerHTML = "";
+  MM.forEach((b, i) => { const bt = H("button", { class: `bchip c-${b.c}${ST.done["mm-" + b.id] ? " seen" : ""}` }); bt.textContent = b.t; bt.addEventListener("click", () => selectBranch(i, bt)); c.appendChild(bt); });
+}
+function renderMapPanel() {
+  const b = MM[mmSel], p = $("#mmPanel");
+  p.className = "panel c-" + b.c;
+  const seen = MM.filter(x => ST.done["mm-" + x.id]).length;
+  p.innerHTML = `<div class="panel-head"><span class="dot"></span><h3>${b.t}</h3><span class="xp-chip">${ST.done["mm-" + b.id] ? "Explored" : "+10 XP"}</span><span class="muted small" style="margin-left:auto">${seen} of 6 explored</span></div><p>${b.body}</p><ul class="small muted">${b.leaves.map(l => `<li>${l.join(" ")}</li>`).join("")}</ul>`;
+}
+function selectBranch(i, el) {
+  mmSel = i; const b = MM[i];
+  if (award("mm-" + b.id, 10, el)) { if (MM.every(x => ST.done["mm-" + x.id])) badge("map", el); }
+  renderMap(true); renderMapChips(); renderMapPanel();
+}
+
+/* ---------- LEVEL 2: flowchart ---------- */
+const FLOW = [
+  { c: "green", t: ["Open claude.ai/code"], title: "Open claude.ai/code", how: "Open <b>claude.ai/code</b> in your browser, or open the Claude app and tap the <b>Code</b> tab. Sign in. You need a Pro, Max, Team or Enterprise plan. Enterprise needs a premium or Chat + Claude Code seat.", tip: "It's the same account on phone, desktop and web. Your sessions show up everywhere." },
+  { c: "blue", t: ["Connect GitHub"], title: "Connect GitHub", how: "Click <b>Connect GitHub</b>. A GitHub page opens. Sign in and click <b>Authorize</b>. You land back in Claude.", tip: "Already use the <code>gh</code> tool in a terminal? Running <code>/web-setup</code> in Claude Code connects GitHub too." },
+  { c: "yellow", dec: true, t: ["Is your repo", "in the list?"], title: "Is your repo in the list?", how: "Open the repo picker. Public repos show up, and so do private repos that have the Claude GitHub App installed. See yours? Follow <b>Yes</b>. Don't see it? Follow <b>No</b>.", tip: "Flip the <b>Pretend my repo is missing</b> switch to watch the No path." },
+  { c: "grape", t: ["Pick your repo"], title: "Pick your repo", how: "Choose your repo in the picker. No repo yet? Create an empty one on github.com first, then pick it.", tip: "One repo per session keeps things simple. Projects can juggle several." },
+  { c: "teal", t: ["Pick or make", "an environment"], title: "Pick or make an environment", how: "The first time, Claude sets up a <b>Default</b> environment with <b>Trusted</b> network access. To change it, open the environment selector (the cloud icon) and click <b>Edit</b>. Fill in Name, Network access, Environment variables and Setup script. On Pro or Max you also get <b>API credentials</b>. Save.", tip: "Never put secret keys in plain variables on a shared team environment. Every teammate can read them." },
+  { c: "blue", t: ["Type your mission"], title: "Type your mission", how: "Write what you want in plain words, and say what <i>done</i> looks like. Example: <i>\"Add a sign-up page with Supabase Auth. Add a test. Then commit and push.\"</i>", tip: "Big job? Say: <i>\"Make a plan first and wait for my OK.\"</i>" },
+  { c: "yellow", t: ["Claude works", "in the cloud"], title: "Claude works in the cloud", how: "Claude copies your repo to a fresh cloud computer, reads CLAUDE.md, writes code and runs tests. Watch live, reply to steer, or close your laptop and come back later.", tip: "If Claude asks a question while you're away, answer when you're back. It picks up from there." },
+  { c: "green", t: ["Review the PR", "and merge"], title: "Review the pull request and merge", how: "Claude pushes a branch. Click <b>Create PR</b> in claude.ai/code. On GitHub, read the changes under <b>Files changed</b>. Ask Claude about anything unclear. Click <b>Merge</b>. Now it's permanent.", tip: "Want to finish on your own computer? Run <code>claude --teleport</code> in your terminal." }
+];
+const SIDE = { c: "coral", t: ["Install the", "Claude", "GitHub App"], title: "Install the Claude GitHub App", how: "On GitHub, open <b>github.com/apps/claude</b>. Click <b>Install</b> or <b>Configure</b>. Pick your account. Choose <b>Only select repositories</b> and tick your repo. Click <b>Save</b>. Go back to Claude and refresh the list.", tip: "Repo belongs to a company? An owner of that GitHub organization may need to approve the install." };
+const FX0 = 150, FSX = 362;
+let fpos = [], fside = {}, fstops = [], fsi = 0, fplaying = false, ftimer = 0, fmoving = false, forb, fglow, fnodes = [], fsideNode;
+function buildFlow() {
+  const host = $("#flow"); host.innerHTML = "";
+  const NW = 250, NH = 60, DW = 230, DH = 104, GAP = 38; let y = 18; fpos = [];
+  FLOW.forEach(s => { const h = s.dec ? DH : NH; fpos.push({ x: FX0, y: y + h / 2, w: s.dec ? DW : NW, h }); y += h + GAP; });
+  const Hv = y - GAP + 18; const dy = fpos[2].y;
+  fside = { x: FSX, y: dy, w: 138, h: 96 };
+  const svg = S("svg", { viewBox: `0 0 440 ${Hv}`, class: "fl", role: "group", "aria-label": "Setup flowchart with eight steps and one side path" }, host);
+  const defs = S("defs", {}, svg); const mk = S("marker", { id: "arw", viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs); S("path", { d: "M0 0L10 5L0 10z", class: "arrow" }, mk);
+  const gE = S("g", {}, svg), gN = S("g", {}, svg);
+  const antsCls = reduce ? "edge" : "edge ants";
+  for (let i = 0; i < fpos.length - 1; i++) { const a = fpos[i], b = fpos[i + 1]; S("path", { d: `M${FX0} ${a.y + a.h / 2}V${b.y - b.h / 2 - 4}`, class: antsCls, "marker-end": "url(#arw)" }, gE); }
+  const yes = S("text", { x: FX0 + 12, y: fpos[2].y + DH / 2 + 22, class: "lbl" }, gE); yes.textContent = "YES";
+  S("path", { d: `M${FX0 + DW / 2} ${dy}H${FSX - fside.w / 2 - 4}`, class: antsCls, "marker-end": "url(#arw)" }, gE);
+  const no = S("text", { x: (FX0 + DW / 2 + FSX - fside.w / 2) / 2, y: dy - 10, class: "lbl", "text-anchor": "middle" }, gE); no.textContent = "NO";
+  S("path", { d: `M${FSX} ${dy - fside.h / 2}V${dy - 74}H${FX0 + 44}V${dy - 38}`, class: antsCls, "marker-end": "url(#arw)" }, gE);
+  const ta = S("text", { x: FSX - 4, y: dy - 82, class: "lbl", "text-anchor": "middle" }, gE); ta.textContent = "TRY AGAIN";
+  fnodes = FLOW.map((s, i) => {
+    const p = fpos[i]; const g = S("g", { class: "step c-" + s.c }, gN);
+    if (s.dec) {
+      const pts = `${p.x},${p.y - p.h / 2} ${p.x + p.w / 2},${p.y} ${p.x},${p.y + p.h / 2} ${p.x - p.w / 2},${p.y}`;
+      S("polygon", { points: pts, class: "halo" }, g);
+      S("polygon", { points: pts.replace(/(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/g, (m, a, b) => `${a},${+b + 5}`), class: "sh" }, g);
+      S("polygon", { points: pts, class: "bd" }, g);
+      const t = S("text", { class: "svg-text", "font-size": 16, "text-anchor": "middle" }, g);
+      s.t.forEach((l, k) => { const ts = S("tspan", { x: p.x, y: p.y - 9 + k * 19, dy: ".35em" }, t); ts.textContent = l; });
+    } else {
+      S("rect", { x: p.x - p.w / 2, y: p.y - p.h / 2, width: p.w, height: p.h, rx: 16, class: "halo" }, g);
+      S("rect", { x: p.x - p.w / 2, y: p.y - p.h / 2 + 5, width: p.w, height: p.h, rx: 16, class: "sh" }, g);
+      S("rect", { x: p.x - p.w / 2, y: p.y - p.h / 2, width: p.w, height: p.h, rx: 16, class: "bd" }, g);
+      S("circle", { cx: p.x - p.w / 2 + 28, cy: p.y, r: 16, class: "num" }, g);
+      const nt = S("text", { x: p.x - p.w / 2 + 28, y: p.y, dy: ".36em", "text-anchor": "middle", class: "numt", "font-size": 16 }, g); nt.textContent = i + 1;
+      const t = S("text", { class: "svg-text", "font-size": 16, "text-anchor": "middle" }, g);
+      s.t.forEach((l, k) => { const ts = S("tspan", { x: p.x + 16, y: p.y - (s.t.length - 1) * 9.5 + k * 19, dy: ".35em" }, t); ts.textContent = l; });
+    }
+    g.setAttribute("tabindex", "0"); g.setAttribute("role", "button"); g.setAttribute("aria-label", "Step " + (i + 1) + ": " + s.title);
+    g.addEventListener("click", () => jumpTo(i)); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); jumpTo(i); } });
+    return g;
+  });
+  fsideNode = S("g", { class: "step c-" + SIDE.c }, gN);
+  S("rect", { x: FSX - fside.w / 2, y: dy - fside.h / 2, width: fside.w, height: fside.h, rx: 16, class: "halo" }, fsideNode);
+  S("rect", { x: FSX - fside.w / 2, y: dy - fside.h / 2 + 5, width: fside.w, height: fside.h, rx: 16, class: "sh" }, fsideNode);
+  S("rect", { x: FSX - fside.w / 2, y: dy - fside.h / 2, width: fside.w, height: fside.h, rx: 16, class: "bd" }, fsideNode);
+  const st = S("text", { class: "svg-text", "font-size": 15, "text-anchor": "middle" }, fsideNode);
+  SIDE.t.forEach((l, k) => { const ts = S("tspan", { x: FSX, y: dy - 18 + k * 18, dy: ".35em" }, st); ts.textContent = l; });
+  fsideNode.setAttribute("tabindex", "0"); fsideNode.setAttribute("role", "button"); fsideNode.setAttribute("aria-label", "Side step: " + SIDE.title);
+  fsideNode.addEventListener("click", () => { setPanel(SIDE, "Side quest"); });
+  fglow = S("circle", { r: 22, class: "orb-glow" }, svg); forb = S("circle", { r: 20, class: "orb" }, svg);
+  buildStops(); placeOrb(stopPt(fstops[fsi] || fstops[0])); markNodes();
+}
+function buildStops() { const miss = $("#flowMissing").checked; fstops = []; FLOW.forEach((s, i) => { fstops.push({ k: i }); if (i === 2 && miss) { fstops.push({ k: "side" }); fstops.push({ k: 2, again: true }); } }); }
+function stopPt(s) { if (s.k === "side") return [FSX - fside.w / 2 + 16, fside.y - fside.h / 2 + 16]; const p = fpos[s.k]; return FLOW[s.k].dec ? [FX0 - p.w / 2 + 24, p.y] : [FX0 - p.w / 2 + 28, p.y]; }
+function segPts(a, b) {
+  const dy = fside.y, D = fpos[2];
+  if (a.k === 2 && b.k === "side") return [stopPt(a), [FX0, dy + 20], [FX0 + D.w / 2, dy], [FSX - fside.w / 2, dy], stopPt(b)];
+  if (a.k === "side") return [stopPt(a), [FSX, dy - fside.h / 2], [FSX, dy - 74], [FX0 + 44, dy - 74], [FX0 + 44, dy - 36], [FX0, dy - D.h / 2 + 6], stopPt(b)];
+  if (typeof a.k === "number" && typeof b.k === "number" && b.k === a.k + 1) { const pa = fpos[a.k], pb = fpos[b.k]; return [stopPt(a), [FX0, pa.y + pa.h / 2], [FX0, pb.y - pb.h / 2], stopPt(b)]; }
+  return [stopPt(a), stopPt(b)];
+}
+function placeOrb([x, y]) { forb.setAttribute("cx", x); forb.setAttribute("cy", y); fglow.setAttribute("cx", x); fglow.setAttribute("cy", y); }
+function markNodes() {
+  const cur = fstops[fsi]; const seenIdx = new Set(fstops.slice(0, fsi).map(s => s.k));
+  fnodes.forEach((g, i) => { g.classList.toggle("on", cur.k === i); g.classList.toggle("seen", seenIdx.has(i)); });
+  fsideNode.classList.toggle("on", cur.k === "side"); fsideNode.classList.toggle("seen", seenIdx.has("side"));
+  const s = cur.k === "side" ? SIDE : FLOW[cur.k];
+  const total = FLOW.length; const label = cur.k === "side" ? "Side quest" : `Step ${cur.k + 1} of ${total}${cur.again ? " (second try)" : ""}`;
+  setPanel(s, label);
+}
+function setPanel(s, label) {
+  const p = $("#flowPanel"); p.className = "panel c-" + s.c;
+  p.innerHTML = `<span class="stepcount">${label}</span><h3>${s.title}</h3><p>${s.how}</p><div class="tipbox"><b>Tip:</b> ${s.tip}</div>`;
+}
+function moveTo(i, done) {
+  const a = fstops[fsi], b = fstops[i]; const pts = i === fsi + 1 ? segPts(a, b) : i === fsi - 1 ? segPts(b, a).reverse() : [stopPt(a), stopPt(b)];
+  fmoving = true; const dur = reduce ? 1 : Math.min(1300, Math.max(380, polyLen(pts) * 4.2));
+  tween(dur, k => placeOrb(polyAt(pts, ease(k))), () => { fmoving = false; fsi = i; markNodes(); done && done(); if (fsi === fstops.length - 1) finishFlow(); });
+}
+function step() { if (!fplaying) return; if (fsi >= fstops.length - 1) { setPlaying(false); return; } moveTo(fsi + 1, () => { if (fplaying) ftimer = setTimeout(step, reduce ? 1800 : 1500); }); }
+function setPlaying(on) { fplaying = on; const b = $("#flowPlay"); b.innerHTML = icon(on ? "pause" : "play", true) + (on ? "Pause" : "Play"); clearTimeout(ftimer); }
+function finishFlow() { if (award("flow-done", 60, forb)) { badge("flow", $("#flowPanel")); } else FX.burst($("#flowPanel")); }
+function jumpTo(i) { setPlaying(false); const idx = fstops.findIndex(s => s.k === i && !s.again); if (idx >= 0 && !fmoving) moveTo(idx); }
+$("#flowPlay").addEventListener("click", () => { if (fplaying) { setPlaying(false); return; } if (fsi >= fstops.length - 1) { fsi = 0; placeOrb(stopPt(fstops[0])); markNodes(); } setPlaying(true); step(); });
+$("#flowNext").addEventListener("click", () => { setPlaying(false); if (!fmoving && fsi < fstops.length - 1) moveTo(fsi + 1); });
+$("#flowBack").addEventListener("click", () => { setPlaying(false); if (!fmoving && fsi > 0) moveTo(fsi - 1); });
+$("#flowReset").addEventListener("click", () => { setPlaying(false); fsi = 0; placeOrb(stopPt(fstops[0])); markNodes(); });
+$("#flowMissing").addEventListener("change", () => { setPlaying(false); fsi = 0; buildStops(); placeOrb(stopPt(fstops[0])); markNodes(); });
+
+const CHECKS = ["I can open claude.ai/code and I'm signed in", "GitHub is connected", "The Claude GitHub App is on my private repo", "My repo has a CLAUDE.md with house rules", "My environment has the right network access and keys", "I merged my first pull request"];
+function renderChecks() {
+  const c = $("#checklist"); c.innerHTML = "";
+  CHECKS.forEach((t, i) => {
+    const l = H("label", { class: "check" }); l.innerHTML = `<input type="checkbox" id="chk${i}"${ST.checks[i] ? " checked" : ""}><span>${t}</span>`;
+    l.querySelector("input").addEventListener("change", e => { ST.checks[i] = e.target.checked ? 1 : 0; save(); if (e.target.checked) { award("chk" + i, 5, e.target); if (CHECKS.every((_, k) => ST.checks[k])) badge("setup", c); } });
+    c.appendChild(l);
+  });
+}
+$$("[data-copy]").forEach(b => b.addEventListener("click", () => {
+  const box = document.getElementById(b.dataset.copy); const txt = box.innerText.replace(/^Copy\s*/, "").replace(/^Copied!\s*/, "");
+  const ok = () => { b.textContent = "Copied!"; setTimeout(() => b.textContent = "Copy", 1400); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Selected"; setTimeout(() => b.textContent = "Copy", 1400); };
+  try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (e) { fallback(); }
+}));
+
+/* ---------- LEVEL 3: vault or sandcastle ---------- */
+const SORT = [
+  { t: "CLAUDE.md, committed and pushed to your repo", v: 1, why: "It's on GitHub. Every new session reads it." },
+  { t: "A file Claude made but never pushed", v: 0, why: "It survives a short idle pause. Once the paused computer is reclaimed, it's gone. Push it." },
+  { t: "Your environment's settings", v: 1, why: "Network access, variables, setup script and API credentials are saved and reused by every session." },
+  { t: "A tool Claude installed by hand in the middle of a session", v: 0, why: "A rebuilt computer starts fresh. Put installs in the setup script. Its result is cached for new sessions." },
+  { t: "Rows saved in your Supabase database", v: 1, why: "Supabase runs on its own servers. Sessions come and go, and the data stays." },
+  { t: "Files on a Claude Code project's Library tab", v: 1, why: "They stay with the project until you delete them. They are copies, so re-upload a file to update it." },
+  { t: "The pull request Claude opened", v: 1, why: "It lives on GitHub." },
+  { t: "A test website Claude started on localhost", v: 0, why: "It runs only inside that cloud computer and stops when the computer pauses or is reclaimed." },
+  { t: "The session's chat in your sidebar", v: 1, why: "It stays until you archive or delete it. If the computer was reclaimed, reopening builds a fresh one." },
+  { t: "Knowledge files in a claude.ai chat Project", v: 1, why: "They're stored with that chat Project. It's a separate feature, so copy what your code sessions need into the repo." }
+];
+function renderSort() {
+  const box = $("#sortItems"); box.innerHTML = "";
+  SORT.forEach((it, i) => {
+    const ans = ST.sort[i]; const d = H("div", { class: "sitem" });
+    d.innerHTML = `<div class="t">${it.t}</div><div class="row"><button class="btn sm c-grape" data-v="1">Vault: stays</button><button class="btn sm c-yellow" data-v="0">Sandcastle: washes away</button></div><div class="verdict"></div><div class="why">${it.why}</div>`;
+    const paint = (v) => { const right = v === it.v; d.classList.add("answered", right ? "right" : "wrong"); d.classList.remove(right ? "wrong" : "right"); d.querySelector(".verdict").textContent = right ? (it.v ? "Correct: vault" : "Correct: sandcastle") : (it.v ? "Not quite: it's in the vault" : "Not quite: it washes away"); $$("button", d).forEach(b => b.disabled = true); };
+    if (ans !== undefined) paint(ans);
+    $$("button", d).forEach(b => b.addEventListener("click", () => {
+      const v = +b.dataset.v; ST.sort[i] = v; save(); paint(v);
+      if (v === it.v) award("sort" + i, 10, b);
+      updSort();
+    }));
+    box.appendChild(d);
+  });
+  updSort();
+}
+function updSort() {
+  const keys = Object.keys(ST.sort); const right = keys.filter(k => ST.sort[k] === SORT[k].v).length;
+  $("#sortDone").textContent = keys.length; $("#sortRight").textContent = right;
+  if (keys.length === SORT.length && right === SORT.length) badge("vault", $("#beach"));
+}
+$("#waveBtn").addEventListener("click", () => {
+  const beach = $("#beach"); beach.classList.remove("washing"); void beach.getBoundingClientRect(); beach.classList.add("washing");
+  $("#dial").style.transform = "rotate(" + (180 + Math.random() * 180) + "deg)";
+  const lost = SORT.filter(s => !s.v).map(s => s.t.toLowerCase());
+  $("#waveMsg").innerHTML = "<b>Washed away:</b> " + lost.join("; ") + ". <b>Vault kept everything else.</b>";
+});
+$("#sortReset").addEventListener("click", () => { ST.sort = {}; save(); $("#beach").classList.remove("washing"); $("#dial").style.transform = ""; $("#waveMsg").textContent = "The wave shows what a recycled cloud computer forgets."; renderSort(); });
+
+/* ---------- LEVEL 4: pipes puzzle ---------- */
+const PS = { net: false, ks: false, kp: false };
+let pMode = "", pL = null, pTimer = 0, pVisible = false;
+function pipesLayout(wide) {
+  if (wide) return { W: 1000, H: 420,
+    you: { x: 90, y: 220, w: 150, h: 80, t: ["You"], s: "phone or laptop", c: "blue" },
+    keys: { x: 430, y: 62, w: 250, h: 72, t: ["Key ring"], s: "", c: "yellow" },
+    sess: { x: 430, y: 230, w: 250, h: 130, t: ["Cloud session"], s: "Claude + your app code", c: "green" },
+    gate: { x: 660, y: 230, w: 110, h: 260 },
+    supa: { x: 880, y: 135, w: 210, h: 84, t: ["Supabase"], s: "database + login", c: "teal" },
+    pine: { x: 880, y: 325, w: 210, h: 84, t: ["Pinecone"], s: "vector search", c: "grape" },
+    edges: [["M165 230H305", ""], ["M430 98V165", ""]],
+    route: { supa: [[555, 200], [605, 200]], pine: [[555, 260], [605, 260]] },
+    pass: { supa: [[605, 200], [715, 200], ...bez([715, 200], [745, 200], [745, 135], [775, 135], 10).slice(1)], pine: [[605, 260], [715, 260], ...bez([715, 260], [745, 260], [745, 325], [775, 325], 10).slice(1)] },
+    status: { supa: [880, 196], pine: [880, 386] } };
+  return { W: 400, H: 600,
+    you: { x: 105, y: 46, w: 170, h: 70, t: ["You"], s: "phone or laptop", c: "blue" },
+    keys: { x: 295, y: 46, w: 170, h: 70, t: ["Key ring"], s: "", c: "yellow" },
+    sess: { x: 200, y: 200, w: 300, h: 112, t: ["Cloud session"], s: "Claude + your app code", c: "green" },
+    gate: { x: 200, y: 340, w: 320, h: 66, horiz: true },
+    supa: { x: 105, y: 478, w: 176, h: 80, t: ["Supabase"], s: "database + login", c: "teal" },
+    pine: { x: 295, y: 478, w: 176, h: 80, t: ["Pinecone"], s: "vector search", c: "grape" },
+    edges: [["M105 81V144", ""], ["M295 81V144", ""]],
+    route: { supa: [[160, 256], [160, 307]], pine: [[240, 256], [240, 307]] },
+    pass: { supa: [[160, 307], [160, 373], ...bez([160, 373], [160, 405], [105, 405], [105, 438], 10).slice(1)], pine: [[240, 307], [240, 373], ...bez([240, 373], [240, 405], [295, 405], [295, 438], 10).slice(1)] },
+    status: { supa: [105, 540], pine: [295, 540] } };
+}
+function renderPipes(force) {
+  const host = $("#pipes"); const wide = host.clientWidth >= 640; const mode = wide ? "w" : "n";
+  if (mode === pMode && !force) { paintPipes(); return; } pMode = mode; host.innerHTML = ""; pL = pipesLayout(wide);
+  const L = pL; const svg = S("svg", { viewBox: `0 0 ${L.W} ${L.H}`, class: "pp", role: "img", "aria-label": "Wiring diagram: you talk to a cloud session; a key ring feeds the session; traffic passes a network gate to Supabase and Pinecone." }, host);
+  const gE = S("g", {}, svg); L.gE = gE; L.svg = svg;
+  L.edges.forEach(([d]) => S("path", { d, class: "edge live" }, gE));
+  L.routeEls = {}; ["supa", "pine"].forEach(k => { const pts = [...L.route[k], ...L.pass[k].slice(1)]; L.routeEls[k] = S("path", { d: "M" + pts.map(p => p.join(" ")).join("L"), class: "edge" }, gE); });
+  const gN = S("g", {}, svg);
+  ["you", "sess", "supa", "pine", "keys"].forEach(k => { const n = L[k]; svgNode(S("g", { class: "c-" + n.c }, gN), { x: n.x, y: n.y, w: n.w, h: n.h, rx: 18, lines: n.t, sub: n.s || " ", fs: 18 }); });
+  L.keysSub = $$("text.svg-sub", gN).pop();
+  const G = L.gate; const gg = S("g", {}, svg);
+  S("rect", { x: G.x - G.w / 2, y: G.y - G.h / 2, width: G.w, height: G.h, rx: 18, class: "gate-bd" }, gg);
+  const bars = S("g", { class: "bars" }, gg);
+  if (G.horiz) for (let x = G.x - G.w / 2 + 24; x <= G.x + G.w / 2 - 24; x += 22) S("line", { x1: x, y1: G.y - G.h / 2 + 10, x2: x, y2: G.y + G.h / 2 - 10 }, bars);
+  else for (let y = G.y - G.h / 2 + 24; y <= G.y + G.h / 2 - 24; y += 22) S("line", { x1: G.x - G.w / 2 + 12, y1: y, x2: G.x + G.w / 2 - 12, y2: y }, bars);
+  S("rect", { x: G.x - 66, y: G.y - 15, width: 132, height: 30, rx: 15, class: "gate-tag" }, gg);
+  L.gateT = S("text", { x: G.x, y: G.y, dy: ".36em", "text-anchor": "middle", class: "gate-tag-t" }, gg);
+  L.st = {}; ["supa", "pine"].forEach(k => { L.st[k] = S("text", { x: L.status[k][0], y: L.status[k][1], "text-anchor": "middle", class: "status" }, svg); });
+  L.pk = S("g", {}, svg);
+  paintPipes();
+}
+function dbState(k) { const key = k === "supa" ? PS.ks : PS.kp; return !PS.net ? "blocked" : (!key ? "nokey" : "ok"); }
+function paintPipes() {
+  const L = pL; if (!L) return;
+  L.svg.classList.toggle("net-open", PS.net); L.gateT.textContent = PS.net ? "GATE OPEN" : "GATE CLOSED";
+  const nk = (PS.ks ? 1 : 0) + (PS.kp ? 1 : 0); L.keysSub.textContent = nk ? nk + (nk === 1 ? " key loaded" : " keys loaded") : "empty";
+  ["supa", "pine"].forEach(k => { const s = dbState(k); L.routeEls[k].setAttribute("class", "edge " + (s === "ok" ? "live" : "dead")); L.st[k].setAttribute("class", "status " + (s === "ok" ? "ok" : "bad")); L.st[k].textContent = s === "ok" ? "Connected" : s === "blocked" ? "Blocked at the gate" : "Error 401: no key"; });
+  const ok = dbState("supa") === "ok" && dbState("pine") === "ok";
+  $("#pipeMsg").textContent = ok ? "Both databases connected. Data is flowing." : !PS.net ? "Data is stuck at the network gate." : "The gate is open. Now load the keys.";
+  if (reduce) return;
+}
+function sendPacket(k) {
+  const L = pL; if (!L || !pVisible) return; const s = dbState(k);
+  const c = S("circle", { r: 8, class: "packet go" }, L.pk);
+  const first = L.route[k], rest = L.pass[k];
+  const run = (pts, dur, done) => tween(dur, t => { const [x, y] = polyAt(pts, t); c.setAttribute("cx", x); c.setAttribute("cy", y); }, done);
+  run(first, 420, () => {
+    if (s === "blocked") { c.setAttribute("class", "packet err"); popText(L, first[first.length - 1], "X"); tween(350, t => c.setAttribute("r", 8 + t * 6), () => c.remove()); return; }
+    run(rest, 650, () => {
+      if (s === "nokey") { c.setAttribute("class", "packet err"); popText(L, rest[rest.length - 1], "401"); tween(350, t => c.setAttribute("r", 8 + t * 6), () => c.remove()); return; }
+      c.setAttribute("class", "packet back"); const back = [...first, ...rest.slice(1)].reverse(); run(back, 900, () => c.remove());
+    });
+  });
+}
+function popText(L, [x, y], txt) { const t = S("text", { x, y: y - 14, "text-anchor": "middle", class: "pop-t" }, L.pk); t.textContent = txt; tween(700, k => { t.setAttribute("y", y - 14 - k * 20); t.setAttribute("opacity", 1 - k); }, () => t.remove()); }
+function pipeLoop() { clearInterval(pTimer); if (reduce || !pVisible) return; let flip = 0; pTimer = setInterval(() => { sendPacket(flip++ % 2 ? "pine" : "supa"); }, 700); }
+[["tgNet", "net"], ["tgSupa", "ks"], ["tgPine", "kp"]].forEach(([id, k]) => $("#" + id).addEventListener("change", e => {
+  PS[k] = e.target.checked; paintPipes();
+  if (PS.net && PS.ks && PS.kp) { if (award("pipes", 60, $("#pipes"))) { badge("pipes", $("#pipes")); FX.cannons(); } }
+}));
+
+/* ---------- LEVEL 5: versus + picker ---------- */
+const PICK = [
+  { q: "Where is your code?", o: [["On GitHub", { w: 2 }], ["Only on my computer", { d: 2 }]] },
+  { q: "Does the task need a local database, a localhost app, or a VPN?", o: [["No", { w: 1 }], ["Yes", { d: 3 }]] },
+  { q: "Do you want to start it and walk away, maybe from your phone?", o: [["Yes, hands-off", { w: 2 }], ["No, I'll sit with it", { d: 1 }]] }
+];
+const pickAns = {};
+function renderPicker() {
+  const box = $("#picker"); box.innerHTML = "";
+  PICK.forEach((p, i) => {
+    const d = H("div", { class: "pq" }); d.innerHTML = `<b>${i + 1}. ${p.q}</b><div class="row"></div>`;
+    p.o.forEach(([label, sc], j) => { const b = H("button", { class: "btn sm ghost" }); b.textContent = label; b.addEventListener("click", () => { pickAns[i] = sc; $$("button", d).forEach(x => x.classList.remove("picked")); b.classList.add("picked"); pickResult(b); }); d.querySelector(".row").appendChild(b); });
+    box.appendChild(d);
+  });
+}
+function pickResult(el) {
+  if (Object.keys(pickAns).length < PICK.length) return;
+  let w = 0, d = 0; Object.values(pickAns).forEach(s => { w += s.w || 0; d += s.d || 0; });
+  const r = $("#pickResult"); r.classList.add("show");
+  let title, body;
+  if (w > d) { title = "Your fighter: Nimbus (Claude Code on the web)"; body = "Your code is on GitHub and you want to hand work off. Start in claude.ai/code or the Code tab in the Claude app. Review the pull request when it's ready."; }
+  else if (d > w) { title = "Your fighter: Desky (Claude Code Desktop, Local)"; body = "Your work needs your own machine. Use the Code tab in the Claude desktop app with Local selected. Use Remote Control if you want to steer it from your phone."; }
+  else { title = "Tag team: use both"; body = "Plan and hand off big tasks in the cloud. Pull them into your terminal with claude --teleport when you need local tools."; }
+  r.innerHTML = `<h3>${title}</h3><p>${body}</p>`;
+  if (award("fighter", 30, el)) badge("fighter", r); else FX.burst(r);
+}
+const vs = $("#vs");
+if ("IntersectionObserver" in window && !reduce) {
+  new IntersectionObserver((es, o) => es.forEach(e => { if (e.isIntersecting) { vs.classList.remove("prime"); o.disconnect(); } }), { threshold: .3 }).observe(vs);
+} else vs.classList.remove("prime");
+
+/* ---------- LEVEL 6: loop ---------- */
+const LOOP = [
+  { t: "Ask", c: "green", tip: "Give one clear goal per session, and say what <i>done</i> looks like. Mention files by name." },
+  { t: "Plan", c: "blue", tip: "For bigger work, say <i>\"Make a plan first and wait for my OK.\"</i> Fix the plan before any code is written. It's cheaper." },
+  { t: "Build", c: "grape", tip: "Claude edits code in the cloud. Send a message any time to steer it. You don't have to wait for it to finish." },
+  { t: "Test", c: "yellow", tip: "Ask Claude to run the tests and show you the result. No tests yet? Ask it to write some first." },
+  { t: "Push", c: "teal", tip: "Say <i>\"commit and push when done.\"</i> Work that isn't pushed can disappear when the cloud computer is reclaimed." },
+  { t: "Review", c: "coral", tip: "Read the pull request under Files changed. Ask Claude to explain anything unclear. Then merge. Correct it once, then add the rule to CLAUDE.md so it sticks." }
+];
+let loopSel = 0;
+function renderLoop() {
+  const host = $("#loop"); host.innerHTML = ""; const cxv = 220, cyv = 220, R = 152, r = 46;
+  const svg = S("svg", { viewBox: "0 0 440 440", class: "lp", role: "group", "aria-label": "The daily loop: Ask, Plan, Build, Test, Push, Review, then back to Ask" }, host);
+  const defs = S("defs", {}, svg); const mk = S("marker", { id: "arw2", viewBox: "0 0 10 10", refX: "7", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" }, defs); S("path", { d: "M0 0L10 5L0 10z", class: "arrow" }, mk);
+  S("circle", { cx: cxv, cy: cyv, r: R, class: "ring" }, svg);
+  const off = Math.asin((r + 10) / R);
+  LOOP.forEach((_, i) => { const a1 = -Math.PI / 2 + i * Math.PI / 3 + off, a2 = -Math.PI / 2 + (i + 1) * Math.PI / 3 - off; S("path", { d: `M${cxv + R * Math.cos(a1)} ${cyv + R * Math.sin(a1)}A${R} ${R} 0 0 1 ${cxv + R * Math.cos(a2)} ${cyv + R * Math.sin(a2)}`, class: "arc", "marker-end": "url(#arw2)" }, svg); });
+  if (!reduce) { const cm = S("g", { class: "comet" }, svg); S("circle", { cx: cxv, cy: cyv - R, r: 9 }, cm); }
+  const ct = S("text", { x: cxv, y: cyv - 10, "text-anchor": "middle", class: "svg-text", "font-size": 24, style: "font-family:var(--f-display)" }, svg); ct.textContent = "The daily loop";
+  const cs = S("text", { x: cxv, y: cyv + 20, "text-anchor": "middle", class: "svg-sub", "font-size": 15 }, svg); cs.textContent = "tap a step";
+  LOOP.forEach((s, i) => {
+    const a = -Math.PI / 2 + i * Math.PI / 3, x = cxv + R * Math.cos(a), y = cyv + R * Math.sin(a);
+    const g = S("g", { class: `stepn c-${s.c}${i === loopSel ? " on" : ""}${ST.done["loop" + i] ? " seen" : ""}` }, svg);
+    S("circle", { cx: x, cy: y + 5, r, class: "sh" }, g); S("circle", { cx: x, cy: y, r, class: "bd" }, g);
+    S("circle", { cx: x + 32, cy: y - 32, r: 9, class: "ring-dot", stroke: "var(--surface)", "stroke-width": 3 }, g);
+    const t = S("text", { x, y, dy: ".36em", "text-anchor": "middle", class: "svg-text", "font-size": 18 }, g); t.textContent = s.t;
+    g.setAttribute("tabindex", "0"); g.setAttribute("role", "button"); g.setAttribute("aria-label", "Loop step: " + s.t);
+    const go = () => { loopSel = i; if (award("loop" + i, 5, g)) { if (LOOP.every((_, k) => ST.done["loop" + k])) badge("loop", g); } renderLoop(); loopPanel(); };
+    g.addEventListener("click", go); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  });
+}
+function loopPanel() { const s = LOOP[loopSel], p = $("#loopPanel"); p.className = "panel c-" + s.c; const n = LOOP.filter((_, k) => ST.done["loop" + k]).length; p.innerHTML = `<div class="panel-head"><span class="dot"></span><span class="stepcount">Step ${loopSel + 1} of 6</span><span class="muted small" style="margin-left:auto">${n} of 6 visited</span></div><h3>${s.t}</h3><p>${s.tip}</p>`; }
+const PAIRS = [
+  ["Make a login.", "Add email and password sign-up and login with Supabase Auth. Read keys from SUPABASE_URL and SUPABASE_ANON_KEY. Turn on Row Level Security. Add a test. Commit and push."],
+  ["Fix the bug.", "The Save button on /settings does nothing in mobile Safari. Find the cause, fix it, add a test that fails before your fix, then push."],
+  ["Use my notes.", "Read CLAUDE.md and docs/brand-voice.md first. Rewrite the homepage text to match. Keep it under 120 words. Open a PR."]
+];
+function renderPairs() { const b = $("#pairs"); b.innerHTML = `<h3>Prompt power-ups</h3>` + PAIRS.map(([w, s]) => `<div class="pair"><div class="weak"><span class="lab">Weak prompt</span>"${w}"</div><div class="strong"><span class="lab">Strong prompt</span>"${s}"</div></div>`).join(""); }
+
+/* ---------- LEVEL 7: traps ---------- */
+const TRAPS = [
+  { d: "Technical", l: "Medium", t: "Work vanishes. The session sat idle, the computer was reclaimed, and nothing was pushed.", f: "End every task with \"commit and push.\" Check the branch on GitHub before you walk away." },
+  { d: "Security", l: "High", t: "A secret key gets pasted into chat or committed to the repo.", f: "Keys go in API credentials (Pro and Max) or environment variables. Add .env to .gitignore. Rotate any key that leaks." },
+  { d: "Security", l: "Medium", t: "A shared team environment exposes keys. Everyone who uses it can read its variables.", f: "Keep secrets out of shared variables. Use read-only or dev keys, or give each person their own environment." },
+  { d: "Security", l: "Medium", t: "The Supabase secret (service_role) key ends up in browser code and skips Row Level Security.", f: "Browser code uses the publishable (anon) key. Turn on Row Level Security for every table. The secret key stays on the server." },
+  { d: "Operational", l: "High", t: "Network wall. The default Trusted level doesn't include Supabase or Pinecone.", f: "Use the Supabase connector, or set Network access to Custom and allow *.supabase.co and *.pinecone.io." },
+  { d: "Operational", l: "Medium", t: "New settings don't show up. You added a connector or changed a variable, but the running session didn't notice.", f: "Start a new session after adding a connector. Variable changes apply when the computer is restored or rebuilt, or in a new session." },
+  { d: "Data", l: "Low", t: "Test code wipes real data. A script deletes a Pinecone index or a Supabase table.", f: "Give Claude a separate dev project and dev index. Keep production keys out of the environment." },
+  { d: "Financial", l: "Medium", t: "Usage limits run out. Many parallel sessions, or a busy project, use up your plan.", f: "One clear task per session. Ask for a plan before big jobs. Projects use limits faster, so start small." },
+  { d: "Knowledge", l: "High", t: "Wrong shelf. Your notes sit in a chat Project, but code sessions read the repo.", f: "Put house rules in CLAUDE.md and reference docs in docs/. In a Claude Code project, use its instructions, memory and Library." },
+  { d: "Quality", l: "Medium", t: "Rubber-stamp merge. A pull request gets merged without anyone reading it.", f: "Read Files changed. Ask Claude to explain each part. Make sure the tests pass before you click Merge." }
+];
+function renderTraps() {
+  const box = $("#traps"); box.innerHTML = "";
+  TRAPS.forEach((x, i) => {
+    const lc = x.l === "High" ? "coral" : x.l === "Medium" ? "yellow" : "green";
+    const d = H("div", { class: "trap" + (ST.traps[i] ? " disarmed" : "") });
+    d.innerHTML = `<div class="meta"><span class="chip c-blue">${x.d}</span><span class="chip c-${lc}">${x.l} likelihood</span></div><div class="t">${x.t}</div><button class="btn sm c-coral" data-ico="shield">Disarm</button><div class="fix"><b>Fix:</b> ${x.f}</div>`;
+    const b = d.querySelector("button"); b.insertAdjacentHTML("afterbegin", icon("shield"));
+    b.addEventListener("click", () => { ST.traps[i] = 1; save(); d.classList.add("disarmed"); award("trap" + i, 5, d); if (TRAPS.every((_, k) => ST.traps[k])) badge("traps", d); });
+    box.appendChild(d);
+  });
+}
+
+/* ---------- LEVEL 8: boss quiz ---------- */
+const QUIZ = [
+  { q: "Do you have to create a project before your first cloud session?", o: ["Yes, always", "No. Pick a repo and go. Projects are optional.", "Only on Team plans"], a: 1, e: "A cloud session needs a GitHub repo and an environment. Projects are an optional beta for coordinating many tasks." },
+  { q: "Where should rules Claude must follow every time live?", o: ["In CLAUDE.md in your repo", "On a sticky note on your desk", "In a file that exists only on the cloud computer"], a: 0, e: "Every session reads CLAUDE.md from the repo. Files only on the cloud computer can vanish." },
+  { q: "Claude made a file but never pushed it. Days later the cloud computer was reclaimed. Where is the file?", o: ["Safe in your repo", "Gone", "In your Downloads folder"], a: 1, e: "Only pushed work survives a reclaimed computer." },
+  { q: "Where should a secret Supabase key go?", o: ["Paste it in the chat", "API credentials (Pro or Max) in the environment settings", "A file called keys.txt in the repo"], a: 1, e: "API credentials let Claude use the key without seeing it. Plain variables are readable by anyone using the environment." },
+  { q: "Claude says it can't reach your-project.supabase.co. What do you check first?", o: ["Network access in the environment settings", "Your phone's battery", "Your GitHub password"], a: 0, e: "Trusted access doesn't include Supabase. Switch to Custom and allow *.supabase.co, or use the connector." },
+  { q: "You need Claude to use a database that runs only on your laptop. Which tool fits?", o: ["Claude Code on the web", "Claude Code Desktop with Local selected", "Neither one"], a: 1, e: "Only a session on your own computer can reach localhost and local databases." }
+];
+let qi = 0, qScore = 0, qHearts = 3;
+function renderQuiz() {
+  const box = $("#quiz");
+  if (qi >= QUIZ.length) {
+    const pass = qScore >= 5;
+    box.innerHTML = `<div class="qcard"><span class="chip ${pass ? "c-green" : "c-coral"}" style="justify-self:start">${pass ? "Boss defeated" : "Boss survived"}</span><div class="qq">You scored ${qScore} of ${QUIZ.length}.</div><p class="muted">${pass ? "Your certificate is waiting in the trophy case." : "Five or more wins. Review the trap room and try again."}</p><div class="row"><button class="btn c-coral" id="qRetry">Play again</button>${pass ? '<a class="btn c-yellow" href="#l9">See my certificate</a>' : ""}</div></div>`;
+    $("#qRetry").addEventListener("click", () => { qi = 0; qScore = 0; qHearts = 3; renderQuiz(); });
+    if (pass) { badge("boss", box); FX.fireworks(); showCert(); }
+    return;
+  }
+  const Q = QUIZ[qi];
+  box.innerHTML = `<div class="qbar"><div class="qprog"><i style="width:${qi / QUIZ.length * 100}%"></i></div><div class="hearts" aria-label="${qHearts} hearts left">${[0, 1, 2].map(h => `<svg viewBox="0 0 24 24" class="heart${h >= qHearts ? " lost" : ""}"><path d="${ICO.heart.match(/d="([^"]+)"/)[1]}"/></svg>`).join("")}</div></div>
+  <div class="qcard"><span class="stepcount" style="color:var(--coral-ink)">Question ${qi + 1} of ${QUIZ.length}</span><div class="qq">${Q.q}</div><div class="opts">${Q.o.map((o, i) => `<button class="opt" data-i="${i}"><span class="k">${"ABC"[i]}</span><span>${o}</span></button>`).join("")}</div><div class="feedback" id="qfb"></div><div class="row" style="justify-content:flex-end"><button class="btn c-coral" id="qNext" hidden>Continue</button></div></div>`;
+  $$(".opt", box).forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.i; const right = i === Q.a; $$(".opt", box).forEach(x => x.disabled = true);
+    b.classList.add(right ? "right" : "wrong"); if (!right) { $$(".opt", box)[Q.a].classList.add("right"); qHearts = Math.max(0, qHearts - 1); $$(".heart", box)[qHearts].classList.add("lost"); }
+    else { qScore++; award("quiz" + qi, 15, b); }
+    const fb = $("#qfb"); fb.className = "feedback show " + (right ? "good" : "bad"); fb.textContent = (right ? "Correct! " : "Not quite. ") + Q.e;
+    const n = $("#qNext"); n.hidden = false; n.focus({ preventScroll: true }); n.addEventListener("click", () => { qi++; renderQuiz(); });
+  }));
+}
+
+/* ---------- trophies + certificate ---------- */
+function renderShelf() {
+  const s = $("#shelf"); s.innerHTML = "";
+  BADGES.forEach(b => { const d = H("div", { class: `badge c-${b.c}${ST.badges[b.id] ? " earned" : ""}` }); d.innerHTML = `<div class="medal">${icon(b.i)}</div><div class="bn">${b.n}</div><div class="bd2">${b.d}</div>`; s.appendChild(d); });
+}
+function showCert() { $("#cert").classList.add("show"); }
+$("#certName").value = ST.name || "";
+$("#certName").addEventListener("input", e => { ST.name = e.target.value; save(); });
+$("#certParty").addEventListener("click", e => { FX.fireworks(); FX.burst(e.currentTarget); });
+let resetArmed = false;
+$("#resetAll").addEventListener("click", () => {
+  if (!resetArmed) { resetArmed = true; $("#resetAll").textContent = "Tap again to confirm"; $("#resetMsg").textContent = "This clears XP and badges in this browser."; setTimeout(() => { resetArmed = false; $("#resetAll").textContent = "Reset my progress"; $("#resetMsg").textContent = ""; }, 4000); return; }
+  store.clear(); ST = { xp: 0, done: {}, badges: {}, name: "", sort: {}, traps: {}, checks: {} }; resetArmed = false;
+  $("#resetAll").textContent = "Reset my progress"; $("#resetMsg").textContent = "Progress cleared."; $("#cert").classList.remove("show"); $("#certName").value = "";
+  boot();
+});
+
+/* ---------- boot ---------- */
+function boot() {
+  renderHUD(); renderPath(); renderQA(); renderMap(true); renderMapChips(); renderMapPanel();
+  buildFlow(); renderChecks(); renderSort(); renderPipes(true); renderPicker(); renderLoop(); loopPanel(); renderPairs(); renderTraps();
+  qi = 0; qScore = 0; qHearts = 3; renderQuiz(); renderShelf(); if (ST.badges.boss) showCert();
+}
+boot();
+$("#mmReplay").addEventListener("click", playMap);
+let rT = 0; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => { renderMap(); renderPipes(); }, 150); });
+if ("IntersectionObserver" in window) {
+  let mapPlayed = false;
+  new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !mapPlayed) { mapPlayed = true; playMap(); } }), { threshold: .35 }).observe($("#mm"));
+  new IntersectionObserver(es => es.forEach(e => { pVisible = e.isIntersecting; pipeLoop(); }), { threshold: .1 }).observe($("#pipes"));
+} else { pVisible = true; pipeLoop(); }
+})();
+</script>
+</body>
+</html>
