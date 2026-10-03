@@ -724,10 +724,10 @@ html.cheat::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:
         <ul class="tips">
           <li><b>One task per session.</b> Small, clear jobs finish faster and are easier to review.</li>
           <li><b>Ask for a plan first</b> on big changes: “Show me your plan before you write code.”</li>
-          <li><b>Changed settings or connectors?</b> Start a new session. Sessions read them when they start.</li>
+          <li><b>Changed settings or connectors?</b> A running session may not see the change right away. Network changes arrive within about a minute. For anything else, start a new session to be sure.</li>
           <li><b>Run several at once.</b> Each session gets its own cloud computer.</li>
           <li><b>Check in from your phone.</b> Sessions keep running when your laptop is closed.</li>
-          <li><b>Secrets stay out of chat and out of the repo.</b> Environment settings only.</li>
+          <li><b>Secrets stay out of chat and out of the repo.</b> Environment settings only. On Pro or Max, use API credentials, so Claude never sees the key.</li>
         </ul>
       </div>
     </div>
@@ -771,7 +771,7 @@ html.cheat::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:
           <tr><th scope="row">What files can it see?</th><td>Your GitHub repo</td><td>Folders on your computer</td></tr>
           <tr><th scope="row">Laptop closed?</th><td>Keeps working</td><td>Pauses when your computer sleeps</td></tr>
           <tr><th scope="row">Saving work</th><td>Commit and push to GitHub, or lose it</td><td>Files save to your disk; push when you want</td></tr>
-          <tr><th scope="row">Secrets and keys</th><td>Environment settings (API credentials or environment variables)</td><td>Local <span class="kbd">.env</span> files you never commit</td></tr>
+          <tr><th scope="row">Secrets and keys</th><td>Environment settings: API credentials on Pro and Max. Otherwise environment variables, which anyone using the environment can read.</td><td>Local <span class="kbd">.env</span> files you never commit</td></tr>
           <tr><th scope="row">Databases</th><td>Connectors, or domains you allow</td><td>Anything your computer can reach, including localhost</td></tr>
           <tr><th scope="row">From your phone</th><td>Yes, in the Claude app</td><td>Through Remote Control, while your computer stays on</td></tr>
           <tr><th scope="row">Best for</th><td>Many tasks at once, checked from anywhere</td><td>Hands-on work with local files and tools</td></tr>
@@ -1214,7 +1214,7 @@ const FMSG = {
   Q1yes: 'You have a GitHub repo. Good. That’s where your project lives.',
   Q1no: 'No repo yet? No problem.',
   N1: 'Make an empty repo on github.com. Name it anything. Two minutes.',
-  S1: 'Open claude.ai/code and connect GitHub. You only do this once.',
+  S1: 'Open claude.ai/code and connect GitHub. Private repo? Also install the Claude GitHub App.',
   Q2: 'Need a Project? Nope. Chat Projects are a separate claude.ai feature.',
   S2: 'Pick the repo, pick an environment, type what you want.',
   E: 'Claude codes, pushes a branch, and opens a pull request. Flow complete.'
@@ -1263,13 +1263,13 @@ const MM = [
     what: 'Edits Claude hasn’t pushed yet, tools it installed, and files it downloaded.',
     tip: 'Say “commit and push” before you walk away. Anything not pushed can disappear.' },
   { id: 'env', t: 'Environment', s: 'SAVED', x: 120, y: 280, ly: 350, leaves: ['API keys', 'network rules'],
-    where: 'Your claude.ai account: the environment menu (cloud icon), then Edit.', lasts: 'Reused by every session that picks this environment.',
+    where: 'Your claude.ai account. To edit it, click the cloud icon above the message box, pick Cloud, point at the environment, and click the gear icon.', lasts: 'Reused by every session that picks this environment.',
     what: 'Network access rules, allowed domains, environment variables, API credentials, and an optional setup script.',
-    tip: 'Changes apply to new sessions. Start a fresh session after you edit it.' },
+    tip: 'Network changes reach running sessions within about a minute. Variable changes reach them after they wake from a pause. Setup script changes usually wait for a new session. Need a change right away? Start a new session.' },
   { id: 'conn', t: 'Connectors', s: 'SAVED', x: 780, y: 280, ly: 350, leaves: ['Supabase', 'Gmail, Drive'],
     where: 'claude.ai/customize/connectors', lasts: 'Stay connected to your account.',
     what: 'Live links to services like Supabase, Google Drive, Gmail, and Refero. They don’t need a network allowlist.',
-    tip: 'Sessions load connectors when they start. Added one mid-session? Open a new session.' },
+    tip: 'Added one while a session is running? It may not show up there right away. If Claude can’t see it, start a new session.' },
   { id: 'hist', t: 'Session history', s: 'SAVED', x: 175, y: 465, ly: 530, leaves: ['transcript', 'branch + PR'],
     where: 'Your session list at claude.ai/code.', lasts: 'Until you archive or delete it.',
     what: 'The conversation, plus the branch and pull request it produced.',
@@ -1395,13 +1395,13 @@ gRender(); gTimer();
 /* ---------------- Level 4: database wiring ---------------- */
 const ROUTES = {
   A: { gate: ['Connector', 'via Anthropic'], steps: [
-    { t: 'Add the connector', d: 'Go to <span class="kbd">claude.ai/customize/connectors</span> and add Supabase, or another service that offers one.' },
+    { t: 'Add the connector', d: 'Go to <span class="kbd">claude.ai/customize/connectors</span> and add Supabase, or another service that offers one. On a Team or Enterprise plan, only an admin can add it.' },
     { t: 'Sign in and approve', d: 'Log in to the service and choose what Claude may touch. Pick the smallest access that works.' },
-    { t: 'Start a new session', d: 'Connectors load when a session starts. Traffic goes through Anthropic, so no allowlist needed.' }
+    { t: 'Use it in a session', d: 'Your cloud sessions can use it with no extra setup. A session that was already running may not see it right away. If so, start a new one. Traffic goes through Anthropic, so no allowlist needed.' }
   ] },
   B: { gate: ['Allowlist + key', 'environment settings'], steps: [
     { t: 'Copy a key from the service', d: 'Find the API keys page in your Supabase or Pinecone dashboard. Use the least powerful key that works.' },
-    { t: 'Store it in the environment', d: 'Environment menu, then Edit, then API credentials. Or an environment variable such as <span class="kbd">SUPABASE_URL</span> or <span class="kbd">PINECONE_API_KEY</span>.' },
+    { t: 'Store it in the environment', d: 'Click the cloud icon, pick Cloud, then click the gear icon on your environment. On Pro or Max, add the key under API credentials, so Claude can use it without seeing it. On Team or Enterprise, use an environment variable such as <span class="kbd">SUPABASE_URL</span> or <span class="kbd">PINECONE_API_KEY</span>. Careful: anyone who uses the environment can read it.' },
     { t: 'Allow the domain', d: 'Network access, then Custom. Add <span class="kbd">*.supabase.co</span> or <span class="kbd">*.pinecone.io</span>. Keep the default package-manager list.' },
     { t: 'Start a new session', d: 'The new session picks up the key and the network rule.' }
   ] }
@@ -1418,7 +1418,7 @@ function updateWire() {
   $('#wireStatus').textContent = p === 1 ? 'Connected. Data now flows to a database that remembers everything.' : wiredOn.size + ' of ' + n + ' steps done.';
   if (p === 1 && !wiredDone[route]) {
     wiredDone[route] = true; const [x, y] = center($('#wDb')); fx.burst(x, y, { count: 120 }); unlock('wired');
-    say(route === 'A' ? 'Connected, and you never touched a password. Your data lives somewhere that remembers, unlike me.' : 'Key hidden, gate opened, new session started. That’s the grown-up way. I’m almost impressed.', 'happy');
+    say(route === 'A' ? 'Connected, and you never touched a password. Your data lives somewhere that remembers, unlike me.' : 'Key stored, gate opened, new session started. That’s the grown-up way. I’m almost impressed.', 'happy');
   }
 }
 function renderRoute() {
@@ -1444,7 +1444,7 @@ function checkLeak() {
   if (!v) { out.className = 'leak-out'; out.textContent = 'You sent nothing. Bold. Minimalist. Unhelpful.'; return; }
   if (LEAK.test(v)) {
     out.className = 'leak-out bad';
-    out.textContent = 'Blocked: that looks like a secret key. Keys go in Environment, then Edit, then API credentials. If a real key ever lands in a chat, rotate it in the service’s dashboard.';
+    out.textContent = 'Blocked: that looks like a secret key. Keys go in your environment settings. On Pro or Max, use API credentials, so Claude never sees the key. If a real key ever lands in a chat, rotate it in the service’s dashboard.';
     const s = $('#siren'); s.classList.remove('on'); void s.offsetWidth; s.classList.add('on');
     sfx.siren(); unlock('leak');
     say('WHOA. A secret key. In a chat box. That’s how keys end up in screenshots, logs, and my nightmares.', 'shock', 8000);
@@ -1460,10 +1460,10 @@ $('#leakBait').addEventListener('click', () => { $('#leakInput').value = 'Here i
 /* ---------------- Level 5: speedrun + loop ---------------- */
 const STEPS = [
   ['Open claude.ai/code and sign in.', 'You need a paid plan: Pro, Max, Team, or Enterprise.'],
-  ['Connect GitHub.', 'Click Connect. Approve the Claude GitHub App. Choose which repos it may see.'],
+  ['Connect GitHub.', 'Follow the prompt to GitHub and approve access. That covers public repos. For private repos, also install the Claude GitHub App on your GitHub account or organization, and pick which repos it may see.'],
   ['Pick a repo.', 'That repo is your project folder. No repo yet? Make an empty one on github.com first.'],
   ['Pick an environment.', 'Click the cloud icon. The standard setup is fine to start. Give it a name you’ll recognize.'],
-  ['Add secrets the safe way.', 'Environment menu, then Edit, then API credentials or environment variables. Never in chat.'],
+  ['Add secrets the safe way.', 'Click the cloud icon, pick Cloud, then the gear icon on your environment. Pro or Max: use API credentials, so Claude never sees the key. Team or Enterprise: use an environment variable, but anyone using the environment can read it. Never in chat.'],
   ['Open the gate for outside services.', 'Add a connector, or set Network access to Custom and list the domain, like <span class="kbd">*.supabase.co</span>.'],
   ['Add a CLAUDE.md to your repo.', 'Your house rules: what the project is, how to test it, what never to touch. Claude reads it every session.'],
   ['Type your request in plain English.', 'Be specific: “Add a signup page that saves emails to Supabase. Write a test for it.”'],
@@ -1536,7 +1536,7 @@ const ROUNDS = [
   { t: 'Check progress from your phone', w: 'cloud', d: 'Open the session in the Claude app. Desktop needs Remote Control and a computer that’s awake.' },
   { t: 'Talk to a database on localhost', w: 'laptop', d: '“Localhost” means your own computer. The cloud can’t see it.' },
   { t: 'Run five tasks at once', w: 'tie', d: 'Both can. The cloud gives each task its own computer. Desktop uses separate worktrees on yours.' },
-  { t: 'Keep a secret key safe', w: 'tie', d: 'Web: environment settings. Desktop: a local .env file you never commit. Chat: never.' }
+  { t: 'Keep a secret key safe', w: 'tie', d: 'Web: environment settings, as an API credential on Pro or Max. Desktop: a local .env file you never commit. Chat: never.' }
 ];
 let fighting = false;
 function setHP(id, v) { const el = $('#' + id); el.querySelector('i').style.width = v + '%'; el.classList.toggle('low', v <= 40); $('#' + id + 'N').textContent = v; }
@@ -1570,12 +1570,12 @@ const QUIZ = [
     r: ['Projects are optional. You just invented paperwork.', 'Correct. Repo, environment, go.', 'Nothing is a Tuesday thing. Except tacos.'] },
   { q: 'A session sits idle for a long time with unpushed changes. What happens?', o: ['They’re saved forever, obviously.', 'Cranky emails them to you.', 'The cloud computer is reclaimed. Unpushed changes are lost.'], a: 2,
     r: ['Bold. Wrong, but bold. Replay Level 3.', 'I don’t have email. I barely have a shape.', 'Correct. Push before you walk away.'] },
-  { q: 'Where should your Supabase or Pinecone API key go?', o: ['Environment settings: API credentials or an environment variable.', 'Paste it in the chat so Claude has it.', 'A sticky note on your monitor.'], a: 0,
-    r: ['Correct. Hidden, saved, and out of the transcript.', 'The Leak Detector just fainted.', 'Analog. Respect. Still wrong.'] },
+  { q: 'Where should your Supabase or Pinecone API key go?', o: ['Environment settings, ideally as an API credential.', 'Paste it in the chat so Claude has it.', 'A sticky note on your monitor.'], a: 0,
+    r: ['Correct. Saved and out of the transcript. An API credential (Pro and Max) even hides it from Claude. An environment variable works, but anyone using the environment can read it.', 'The Leak Detector just fainted.', 'Analog. Respect. Still wrong.'] },
   { q: 'Claude can’t reach api.pinecone.io from the cloud. What’s the fix?', o: ['Ask again, in all caps.', 'Restart your Wi-Fi router.', 'Network access, then Custom, then add *.pinecone.io. Or use a connector.'], a: 2,
     r: ['Caps lock is not a network setting.', 'Your router is not invited to this cloud.', 'Correct. Open the gate for that one domain.'] },
-  { q: 'You added a connector in the middle of a session. Why can’t Claude see it?', o: ['Connectors load when a session starts. Open a new one.', 'The connector is broken. Throw the laptop.', 'Mercury is in retrograde.'], a: 0,
-    r: ['Correct. New session, new connectors.', 'Please don’t throw the laptop. It’s in Level 6.', 'Mercury has no say in this.'] },
+  { q: 'You added a connector in the middle of a session. Why can’t Claude see it?', o: ['It may not reach a session that’s already running. Start a new one.', 'The connector is broken. Throw the laptop.', 'Mercury is in retrograde.'], a: 0,
+    r: ['Correct. A new session picks up your connectors.', 'Please don’t throw the laptop. It’s in Level 6.', 'Mercury has no say in this.'] },
   { q: 'Which one keeps working after you close your laptop?', o: ['Claude Code Desktop.', 'Claude Code on the web.', 'Neither. Laptops are load-bearing.'], a: 1,
     r: ['Desktop runs on your computer. Lid closed, work paused.', 'Correct. It runs on Anthropic’s computers.', 'Your laptop is not holding up the internet.'] }
 ];
