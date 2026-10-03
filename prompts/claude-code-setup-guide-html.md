@@ -2,6 +2,8 @@
 
 Saved prompts that produced the Claude Code setup guide pages. Copy a prompt block exactly as written to reproduce the build.
 
+Both versions side by side: "Claude Code Guide Shelf" — https://claude.ai/artifact/E17kXDdKqUHhJrjydhT9xF (standalone copy: [`guides/index.html`](../guides/index.html))
+
 > Note on names: "Refaroo" in the original prompt means **Refero** (the design-reference connector). "Superbase" means **Supabase**.
 
 ## Version 1: original prompt (verbatim)

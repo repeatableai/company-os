@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Code Guide Shelf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&family=Jersey+10&family=Gabarito:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a store shelf. A neutral graphite frame holds two boxed games side by side; each box wears its own game's palette and type, so the comparison is visible before a word is read. */
+:root{
+  --shelf:#e6e8eb; --shelf-2:#d6d9dd; --ink:#16181b; --ink-2:#4a4f57; --ink-3:#737983; --rule:#c3c7cd; --card:#f7f8f9; --focus:#3b5bdb;
+  --display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  /* Box 1: Web Quest (its own tokens, fixed in both themes) */
+  --q-bg:#f6faf3; --q-band:#58cc02; --q-band-d:#46a302; --q-ink:#22301e; --q-ink-2:#51604b; --q-blue:#1cb0f6; --q-yellow:#ffc800; --q-grape:#a570ff; --q-coral:#ff6b5e; --q-line:#dbe5d5;
+  /* Box 2: Cloud Cartridge */
+  --c-bg:#fffaf0; --c-band:#ffc500; --c-band-d:#d9a400; --c-ink:#1e1c17; --c-char:#312f27; --c-violet:#7700ff; --c-violet-d:#3f0088; --c-teal:#21c6a9; --c-line:#e9e4d9;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--shelf:#141619; --shelf-2:#1d2024; --ink:#eceef1; --ink-2:#b6bcc5; --ink-3:#8b919b; --rule:#33373d; --card:#1b1e22; --focus:#8ea4ff; color-scheme:dark}}
+:root[data-theme="dark"]{--shelf:#141619; --shelf-2:#1d2024; --ink:#eceef1; --ink-2:#b6bcc5; --ink-3:#8b919b; --rule:#33373d; --card:#1b1e22; --focus:#8ea4ff; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--shelf);color:var(--ink);font:400 17px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.page{max-width:1120px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px);padding-block:clamp(40px,7vw,88px) 64px}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+
+.head{display:grid;gap:14px;max-width:760px;margin-bottom:clamp(32px,5vw,52px)}
+.eyebrow{font:700 12px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0}
+h1{font:900 clamp(48px,8vw,96px)/.9 var(--display);font-stretch:118%;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.lead{font-size:clamp(18px,2vw,20px);line-height:1.5;color:var(--ink-2);margin:0;max-width:60ch}
+
+.shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,3vw,32px);align-items:stretch;position:relative;padding-bottom:22px}
+.shelf::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:14px;background:var(--shelf-2);border-top:2px solid var(--rule);border-radius:2px}
+@media (max-width:820px){.shelf{grid-template-columns:1fr}}
+
+.box{display:flex;flex-direction:column;min-width:0;border-radius:14px;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 1px 0 rgba(0,0,0,.08),0 18px 30px -18px rgba(0,0,0,.45)}
+.box:hover{transform:translateY(-4px) rotate(-.3deg);box-shadow:0 1px 0 rgba(0,0,0,.08),0 26px 40px -20px rgba(0,0,0,.5)}
+@media (prefers-reduced-motion: reduce){.box,.box:hover{transition:none;transform:none}}
+.art{position:relative;padding:22px 22px 20px;min-height:200px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;overflow:hidden}
+.tag{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:7px 10px;border-radius:999px}
+.ttl{margin:0;position:relative;z-index:1;padding-right:min(140px,30%);text-wrap:balance}
+.body{flex:1;display:flex;flex-direction:column;gap:16px;padding:22px}
+.one{margin:0;font-size:17px;line-height:1.5}
+.meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:0}
+.meta dt{font:700 11px/1.75 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.meta dd{margin:0;font-size:15px;line-height:1.5}
+.feats{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.feats li{display:grid;grid-template-columns:14px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45}
+.feats li::before{content:"";width:10px;height:10px;margin-top:6px}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches i{width:22px;height:22px;border-radius:5px;display:block}
+.open{margin-top:auto;align-self:flex-start;text-decoration:none;display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:12px 22px;transition:transform .08s,box-shadow .08s}
+.open:active{transform:translateY(4px)}
+
+/* Box 1: Web Quest skin */
+.q{background:var(--q-bg);color:var(--q-ink)}
+.q .art{background:var(--q-band);color:#fff}
+.q .tag{background:#fff;color:var(--q-band-d)}
+.q .ttl{font:700 clamp(40px,5.2vw,56px)/.95 "Fredoka", "Nunito", system-ui, sans-serif;letter-spacing:-.01em}
+.q .body{font-family:"Nunito", system-ui, sans-serif}
+.q .meta dt{color:var(--q-ink-2)}
+.q .feats li::before{background:var(--q-band);border-radius:50%}
+.q .open{font:800 17px/1 "Nunito", system-ui, sans-serif;background:var(--q-band);color:#fff;border-radius:16px;box-shadow:0 5px 0 var(--q-band-d);text-transform:uppercase;letter-spacing:.04em}
+.q .open:active{box-shadow:0 1px 0 var(--q-band-d)}
+.q .open:focus-visible{outline-color:var(--q-ink)}
+.nimbus{position:absolute;right:-6px;top:20px;width:150px;height:auto;opacity:.95}
+.sticker{position:absolute;font:800 13px/1 "Nunito", system-ui, sans-serif;padding:7px 10px;border-radius:999px;transform:rotate(8deg);right:120px;top:22px;background:var(--q-yellow);color:var(--q-ink);box-shadow:0 3px 0 #e0a500}
+@media (max-width:420px){.sticker{display:none}}
+
+/* Box 2: Cloud Cartridge skin */
+.c{background:var(--c-bg);color:var(--c-ink);border-radius:4px}
+.c .art{background:var(--c-band);color:var(--c-ink)}
+.c .tag{background:var(--c-ink);color:var(--c-band)}
+.c .ttl{font:400 clamp(52px,6.6vw,72px)/.82 "Jersey 10", "Courier New", monospace}
+.c .body{font-family:"Gabarito", system-ui, sans-serif}
+.c .meta dt{color:#6f6c62}
+.c .feats li::before{background:var(--c-violet)}
+.c .open{font:700 17px/1 "Gabarito", system-ui, sans-serif;background:var(--c-violet);color:#fff;border-radius:999px;border:2px solid var(--c-violet-d);box-shadow:0 4px 0 var(--c-violet-d)}
+.c .open:active{box-shadow:0 0 0 var(--c-violet-d)}
+.c .open:focus-visible{outline-color:var(--c-ink)}
+.cranky{position:absolute;right:14px;top:16px;width:120px;height:auto;filter:drop-shadow(4px 4px 0 var(--c-ink))}
+@media (prefers-reduced-motion: no-preference){.cranky{animation:bob 3.2s ease-in-out infinite}.nimbus{animation:bob 3.8s ease-in-out infinite}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+
+/* Below the shelf */
+.section{margin-top:clamp(56px,8vw,88px);display:grid;gap:18px}
+h2{font:800 clamp(28px,3.4vw,38px)/1.05 var(--display);font-stretch:110%;letter-spacing:-.015em;margin:0}
+.table-wrap{overflow-x:auto;border:1.5px solid var(--rule);border-radius:10px;background:var(--card)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:13px 16px;border-bottom:1px solid var(--rule);font-size:15px;line-height:1.5}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+thead th{font:700 11px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+thead th .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+tbody th{font-weight:700;width:24%;color:var(--ink)}
+td{color:var(--ink-2)}
+.pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:720px){.pick{grid-template-columns:1fr}}
+.pick div{border-top:3px solid var(--ink);padding-top:12px}
+.pick b{display:block;font:800 18px/1.3 var(--display);margin-bottom:4px}
+.pick p{margin:0;color:var(--ink-2);font-size:16px}
+.foot{margin-top:clamp(48px,7vw,72px);padding-top:22px;border-top:1.5px solid var(--rule);display:grid;gap:8px;color:var(--ink-3);font-size:14px;line-height:1.55}
+.foot p{margin:0;max-width:80ch}
+.foot code{font:500 13px/1.4 var(--mono);color:var(--ink-2);overflow-wrap:anywhere}
+.foot a{color:var(--ink-2);text-underline-offset:3px}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="head">
+    <p class="eyebrow">One prompt · two builds · same six questions</p>
+    <h1>Pick your guide.</h1>
+    <p class="lead">Both guides answer the same questions about Claude Code on the web: do you need a Project, where your files live and whether they last, how to add logins and a database, how to set it up, and how it differs from Desktop. They play very differently.</p>
+  </header>
+
+  <section class="shelf" aria-label="The two guides">
+    <article class="box q">
+      <div class="art">
+        <span class="tag">Version 1 · Oct 2, 2026</span>
+        <svg class="nimbus" viewBox="0 0 160 110" aria-hidden="true"><path d="M38 96c-19 0-32-12-32-28 0-15 11-26 26-27 3-20 19-34 40-34 17 0 31 10 37 25 3-1 6-1 9-1 20 0 35 15 35 33s-15 32-35 32H38z" fill="#ffffff"/><circle cx="62" cy="58" r="6" fill="#22301e"/><circle cx="96" cy="58" r="6" fill="#22301e"/><circle cx="64" cy="56" r="2" fill="#ffffff"/><circle cx="98" cy="56" r="2" fill="#ffffff"/><path d="M70 72c6 7 14 7 20 0" stroke="#22301e" stroke-width="5" stroke-linecap="round" fill="none"/><circle cx="50" cy="70" r="6" fill="#ffb3ab"/><circle cx="110" cy="70" r="6" fill="#ffb3ab"/></svg>
+        <span class="sticker" aria-hidden="true">+20 XP</span>
+        <h2 class="ttl">Claude Code Web Quest</h2>
+      </div>
+      <div class="body">
+        <p class="one">A friendly, Duolingo-style quest. Nine levels with XP, badges, and a cheerful cloud named Nimbus who walks you from first login to first merge.</p>
+        <dl class="meta">
+          <dt>Design</dt><dd>Refero reference: Duolingo. Mint canvas, candy greens and blues, rounded type, pressable 3D buttons.</dd>
+          <dt>Shape</dt><dd>9 levels, 10 badges, a boss quiz with three hearts and a certificate.</dd>
+          <dt>Theme</dt><dd>Light and dark, with a toggle.</dd>
+        </dl>
+        <ul class="feats">
+          <li>Flip cards with the short answer on the front and the full story on the back</li>
+          <li>Animated setup flowchart with a “pretend my repo is missing” detour</li>
+          <li>Vault or sandcastle sorting game, then a wave washes the sandcastle away</li>
+          <li>Trap room pre-mortem: ten ways it fails, each with a Disarm button</li>
+        </ul>
+        <div class="swatches" aria-label="Palette"><i style="background:#58cc02"></i><i style="background:#1cb0f6"></i><i style="background:#ffc800"></i><i style="background:#a570ff"></i><i style="background:#ff6b5e"></i><i style="background:#14c2b0"></i></div>
+        <a class="open" href="https://claude.ai/artifact/7VwXUwABKLS4QynZgaANdN" target="_blank" rel="noopener">Open Web Quest</a>
+      </div>
+    </article>
+
+    <article class="box c">
+      <div class="art">
+        <span class="tag">Version 2 · Oct 3, 2026</span>
+        <span id="cranky"></span>
+        <h2 class="ttl">Claude Code Cloud Cartridge</h2>
+      </div>
+      <div class="body">
+        <p class="one">A sarcastic handheld-console game. Crank the screen, beat the self-destruct timer, and get roasted by Cranky, a cloud with opinions.</p>
+        <dl class="meta">
+          <dt>Design</dt><dd>Refero references: Playdate for the lemon, charcoal, and violet handheld with a crank. Obscura for pixel headlines and pixel clouds.</dd>
+          <dt>Shape</dt><dd>6 levels plus a boss quiz, 16 achievements with XP.</dd>
+          <dt>Theme</dt><dd>One fixed arcade look on any screen.</dd>
+        </dl>
+        <ul class="feats">
+          <li>A console you drive by dragging its crank, with a 1-bit animated screen</li>
+          <li>Commit-and-push mini-game where unpushed files explode</li>
+          <li>Leak Detector 3000: paste something that looks like a key and the sirens go off</li>
+          <li>Web vs Desktop fight that ends in a double K.O.</li>
+        </ul>
+        <div class="swatches" aria-label="Palette"><i style="background:#ffc500"></i><i style="background:#312f27"></i><i style="background:#7700ff"></i><i style="background:#21c6a9"></i><i style="background:#ff5e24"></i><i style="background:#e9e4d9"></i></div>
+        <a class="open" href="https://claude.ai/artifact/LFz5jVobABak6wtEpG9pkv" target="_blank" rel="noopener">Open Cloud Cartridge</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="section" aria-labelledby="glance">
+    <h2 id="glance">At a glance</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">&nbsp;</th><th scope="col"><span class="dot" style="background:#58cc02"></span>Web Quest</th><th scope="col"><span class="dot" style="background:#ffc500"></span>Cloud Cartridge</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Voice</th><td>Encouraging coach</td><td>Sarcastic narrator who still tells the truth</td></tr>
+          <tr><th scope="row">Mascot</th><td>Nimbus, a smiling cloud</td><td>Cranky, a pixel cloud with moods</td></tr>
+          <tr><th scope="row">First reveal</th><td>Mind map of the six parts</td><td>Animated “Do I need a Project?” flowchart</td></tr>
+          <tr><th scope="row">Second reveal</th><td>Animated setup flowchart</td><td>Mind map of where your stuff lives</td></tr>
+          <tr><th scope="row">Mini-games</th><td>Sorting game, wiring puzzle, fighter picker, trap room</td><td>Self-destruct timer, wiring puzzle, leak detector, setup speedrun, fight</td></tr>
+          <tr><th scope="row">Confetti</th><td>Confetti lab: burst, side cannons, rain, fireworks, gold coins</td><td>Confetti cabinet: classic, pixel storm, commit rain, sad confetti</td></tr>
+          <tr><th scope="row">Secrets</th><td>Type “merge” for fireworks</td><td>Konami code, or tap the logo seven times</td></tr>
+          <tr><th scope="row">Facts checked</th><td>October 2, 2026</td><td>October 3, 2026, including the new Projects beta and its Library tab</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="which">
+    <h2 id="which">Which one should I open?</h2>
+    <div class="pick">
+      <div><b>Sharing with someone new to this?</b><p>Open Web Quest. It is calm, step by step, and has a light and a dark mode.</p></div>
+      <div><b>Want it to stick through jokes and games?</b><p>Open Cloud Cartridge. The mini-games make the save-your-work lesson hard to forget.</p></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Both guides were built from the same saved prompt: <code>prompts/claude-code-setup-guide-html.md</code> in the <a href="https://github.com/repeatableai/company-os/blob/main/prompts/claude-code-setup-guide-html.md" target="_blank" rel="noopener">company-os repo</a>. A standalone copy of version 2 lives at <code>guides/claude-code-cloud-cartridge.html</code>.</p>
+    <p>Both pages are private to your Claude account. Use each page’s Share menu before you send the links to anyone.</p>
+  </footer>
+</main>
+
+<script>
+(() => {
+  const CLOUD = ['......XXXXX.........','.....XWWWWWX.XXXX...','....XWWWWWWWXWWWWX..','..XXXWWWWWWWWWWWWWX.','.XWWWWWWWWWWWWWWWWWX','XWWWWWWWWWWWWWWWWWWX','XWWWWWWWWWWWWWWWWWWX','XWWWWWWWWWWWWWWWWWWX','XWWWWWWWWWWWWWWWWWWX','XWWWWWWWWWWWWWWWWWWX','.XWWWWWWWWWWWWWWWWX.','..XXXXXXXXXXXXXXXX..'];
+  const FACE = [[4,6],[5,6],[6,6],[7,6],[12,6],[13,6],[14,6],[15,6],[6,7],[14,7],[9,9],[10,9],[11,9],[12,8]];
+  const g = CLOUD.map(r => r.split(''));
+  FACE.forEach(([x, y]) => { g[y][x] = 'E'; });
+  let s = '';
+  g.forEach((row, y) => { let x = 0; while (x < 20) { const c = row[x]; if (c === '.') { x++; continue; } let n = 1; while (x + n < 20 && row[x + n] === c) n++; s += '<rect x="' + x + '" y="' + y + '" width="' + n + '" height="1" fill="' + (c === 'W' ? '#fffaf0' : '#1e1c17') + '"/>'; x += n; } });
+  document.getElementById('cranky').outerHTML = '<svg class="cranky" viewBox="0 0 20 12" shape-rendering="crispEdges" aria-hidden="true">' + s + '</svg>';
+})();
+</script>
+
+</body>
+</html>

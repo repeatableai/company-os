@@ -506,6 +506,7 @@ html.cheat::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:
         <p class="answer__q">Where are my knowledge files stored?</p>
         <p class="answer__a">In your GitHub repo.</p>
         <p>Put a <span class="kbd">CLAUDE.md</span> and a <span class="kbd">docs/</span> folder there. Every session starts from a fresh copy of the repo.</p>
+        <p>Using Projects in Claude Code? You can also add files on the project’s Library tab. Every task in that project can read them, and they stay until you delete the project. They are copies, so upload a file again after you change it.</p>
         <a class="go" href="#level-2">Level 2 · the storage map →</a>
       </article>
       <article class="answer">
@@ -580,7 +581,7 @@ html.cheat::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:
     <div class="trio">
       <div class="note"><h3>Claude Code on the web</h3><p>Needs a GitHub repo and an environment. No Project required. Your repo is the project.</p></div>
       <div class="note"><h3>claude.ai chat Projects</h3><p>A chat feature for grouping conversations with uploaded files and custom instructions. Useful, but a different room.</p></div>
-      <div class="note"><h3>See “Projects” in Claude Code?</h3><p>It’s an optional way to group related sessions. You can ignore it on day one and nothing breaks.</p></div>
+      <div class="note"><h3>See “Projects” in Claude Code?</h3><p>It’s a new beta (test) feature for some Pro and Max users. A project is one main chat where you list your tasks. Claude starts a separate session for each task and keeps track of them all. It’s optional, and you can skip it on day one. If you try it, it uses up your plan’s limits faster.</p></div>
     </div>
   </div>
 </section>
@@ -1274,8 +1275,8 @@ const MM = [
     what: 'The conversation, plus the branch and pull request it produced.',
     tip: 'Reopen an old session to pick up the thread. Its computer starts fresh from the repo.' },
   { id: 'chat', t: 'Chat Project files', s: 'CHAT ONLY', x: 725, y: 465, ly: 530, leaves: ['uploaded PDFs', 'instructions'],
-    where: 'claude.ai chat, inside a Project, on Anthropic’s servers.', lasts: 'As long as the Project exists.',
-    what: 'PDFs and docs you uploaded for regular Claude chats, plus that Project’s custom instructions.',
+    where: 'In a Project in regular Claude chat, on Anthropic’s servers.', lasts: 'As long as the Project exists.',
+    what: 'Files you uploaded for chats, like PDFs and docs, plus that Project’s instructions.',
     tip: 'Don’t count on Claude Code seeing these. Copy what matters into your repo’s docs/ folder.' }
 ];
 (() => {
