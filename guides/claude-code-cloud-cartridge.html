@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Code Cloud Cartridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gabarito:wght@400;500;600;700;800;900&family=Jersey+10&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: full-bleed bands alternating charcoal / lemon / parchment (Playdate), one 1120px column, a handheld console with a working crank as the hero object, pixel display type and pixel clouds (Obscura). One deliberate visual world on either host theme. */
+:root{
+  --lemon:#ffc500; --lemon-deep:#d9a400; --lemon-pale:#fff3c4;
+  --charcoal:#312f27; --ink:#1e1c17; --char-2:#3a372e; --char-line:#4f4b40;
+  --violet:#7700ff; --violet-deep:#3f0088;
+  --teal:#21c6a9; --teal-deep:#127866;
+  --parchment:#e9e4d9; --paper:#fffaf0; --stone:#b1afa7; --stone-deep:#6f6c62; --muted-dark:#c9c4b5;
+  --alarm:#ff5e24; --alarm-deep:#a8320a; --alarm-pale:#ffd9cc;
+  --screen:#c8c5b6;
+  --font-display:"Jersey 10", ui-monospace, "Courier New", monospace;
+  --font-body:"Gabarito", ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --t-hero:clamp(64px, 10vw, 132px); --t-h2:clamp(52px, 7.4vw, 92px); --t-lead:clamp(18px, 2vw, 21px); --t-body:18px; --t-cap:13px;
+  --col:1120px; --gut:clamp(16px, 4vw, 40px);
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:130px}
+body{margin:0;background:var(--charcoal);color:var(--paper);font:400 var(--t-body)/1.5 var(--font-body);-webkit-font-smoothing:antialiased}
+.page{overflow-x:clip}
+a{color:inherit}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--violet);outline-offset:3px}
+.band--charcoal :focus-visible,.band--ink :focus-visible,.hud :focus-visible,.band--violet :focus-visible{outline-color:var(--lemon)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto} *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+/* ---------- HUD ---------- */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--ink);color:var(--parchment);border-bottom:3px solid var(--lemon);padding-block:10px;padding-inline:var(--gut)}
+.hud__in{max-width:var(--col);margin-inline:auto;display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:400 28px/1 var(--font-display);color:var(--lemon);background:none;border:0;padding:0;cursor:pointer;letter-spacing:.02em}
+.brand svg{width:36px;height:auto}
+.levels{display:flex;gap:6px;overflow-x:auto;flex:1 1 360px;min-width:0;scrollbar-width:none}
+.levels::-webkit-scrollbar{display:none}
+.levels a{font:700 12px/1 var(--font-mono);color:var(--parchment);text-decoration:none;padding:8px 10px;border:2px solid #4a473d;border-radius:6px;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+.levels a:hover{border-color:var(--lemon);color:var(--lemon)}
+.levels a.on{background:var(--lemon);color:var(--ink);border-color:var(--lemon)}
+.hud__right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.xp{display:flex;align-items:center;gap:8px;font:700 12px/1 var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.xp__bar{width:84px;height:12px;border:2px solid var(--lemon);position:relative}
+.xp__bar i{position:absolute;inset:0 auto 0 0;width:0;background:var(--lemon);transition:width .4s}
+.icon-btn{background:transparent;border:2px solid #4a473d;color:var(--parchment);border-radius:6px;padding:7px 10px;font:700 12px/1 var(--font-mono);cursor:pointer;min-height:34px;letter-spacing:.04em}
+.icon-btn[aria-pressed="true"]{border-color:var(--teal);color:var(--teal)}
+@media (max-width:760px){.levels{order:3;flex-basis:100%}.xp__bar{width:56px}.brand{font-size:24px}}
+
+/* ---------- Bands & type ---------- */
+.band{padding-block:clamp(64px,9vw,108px);padding-inline:var(--gut);position:relative}
+.wrap{max-width:var(--col);margin-inline:auto;position:relative;z-index:1}
+.band--charcoal{background:var(--charcoal);color:var(--paper)}
+.band--lemon{background:var(--lemon);color:var(--charcoal)}
+.band--parchment{background:var(--parchment);color:var(--charcoal)}
+.band--violet{background:var(--violet);color:#fff}
+.band--ink{background:var(--ink);color:var(--parchment)}
+.level-head{display:grid;gap:14px;margin-bottom:40px;max-width:800px}
+.eyebrow{font:700 var(--t-cap)/1.2 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;margin:0}
+.band--charcoal .eyebrow{color:var(--lemon)}
+.band--lemon .eyebrow,.band--parchment .eyebrow{color:var(--violet)}
+.band--violet .eyebrow{color:var(--lemon)}
+.h2{font:400 var(--t-h2)/.82 var(--font-display);letter-spacing:-.005em;margin:0;text-wrap:balance}
+.lead{font-size:var(--t-lead);line-height:1.45;max-width:62ch;margin:0}
+.band--charcoal .lead,.band--ink .lead{color:var(--muted-dark)}
+.kbd{font:700 .86em/1.2 var(--font-mono);background:#fff;color:var(--ink);border:1.5px solid var(--ink);padding:1px 6px;border-radius:4px;white-space:nowrap}
+.band--charcoal .kbd{background:var(--ink);color:var(--lemon);border-color:#5a564b}
+
+/* ---------- Buttons ---------- */
+.btn{font:700 16px/1 var(--font-body);padding:13px 18px;border-radius:6px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;text-decoration:none}
+.btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 4px 0 var(--ink)}
+.btn--violet{background:var(--violet);color:#fff;border-color:var(--violet-deep);box-shadow:0 4px 0 var(--violet-deep);border-radius:999px;padding-inline:24px}
+.btn--violet:active{box-shadow:0 0 0 var(--violet-deep)}
+.btn--lemon{background:var(--lemon)}
+.btn--teal{background:var(--teal)}
+.btn--alarm{background:var(--alarm);color:var(--ink);border-color:var(--alarm-deep);box-shadow:0 4px 0 var(--alarm-deep)}
+.btn--ghost{background:transparent;color:var(--paper);border-color:var(--paper);box-shadow:0 4px 0 #000}
+.btn--ghost:active{box-shadow:0 0 0 #000}
+.btn--sm{min-height:38px;padding:9px 13px;font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* ---------- Hero ---------- */
+.hero{padding-block:clamp(44px,6vw,80px) clamp(64px,8vw,104px);overflow:hidden}
+.sky{position:absolute;inset:0;pointer-events:none;z-index:0}
+.sky svg{position:absolute;width:150px;height:auto;opacity:.08;animation:drift linear infinite}
+@keyframes drift{from{transform:translateX(-25vw)}to{transform:translateX(125vw)}}
+.hero__grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(36px,5vw,72px);align-items:center}
+@media (max-width:900px){.hero__grid{grid-template-columns:1fr}}
+.hero__title{font:400 var(--t-hero)/.8 var(--font-display);color:var(--paper);margin:16px 0 24px;letter-spacing:-.005em;text-wrap:balance}
+.hl{display:inline-block;background:var(--lemon);color:var(--charcoal);padding:.02em .1em 0;transform:rotate(-2.5deg)}
+.hero .lead{margin-bottom:28px}
+.cabinet{margin-top:32px;border-top:2px dashed #5a564b;padding-top:18px;display:grid;gap:12px}
+.cabinet p{margin:0;font:700 12px/1.3 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--lemon)}
+
+/* ---------- Console ---------- */
+.device{position:relative;padding-right:46px;justify-self:center;width:min(430px,100%)}
+.console{background:var(--lemon);border-radius:24px;padding:22px 22px 20px;box-shadow:inset 0 -9px 0 var(--lemon-deep),0 0 0 3px var(--ink),12px 14px 0 #000;position:relative;color:var(--ink)}
+.screen-wrap{background:var(--ink);border-radius:9px;padding:12px}
+#screen{display:block;width:100%;height:auto;aspect-ratio:5/3;image-rendering:pixelated;background:var(--screen);border-radius:2px}
+.console__label{font:400 21px/1 var(--font-display);letter-spacing:.06em;margin:14px 2px 16px;display:flex;justify-content:space-between;gap:8px}
+.console__label span:last-child{font:700 11px/1.9 var(--font-mono);letter-spacing:.12em}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.dpad{display:grid;grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,36px)}
+.dpad button{background:var(--ink);border:0;color:var(--lemon);cursor:pointer;font:700 14px/1 var(--font-mono);padding:0}
+.dpad button:active{background:#000}
+.dpad .u{grid-area:1/2;border-radius:6px 6px 0 0}.dpad .l{grid-area:2/1;border-radius:6px 0 0 6px}.dpad .c{grid-area:2/2;background:var(--ink)}.dpad .r{grid-area:2/3;border-radius:0 6px 6px 0}.dpad .d{grid-area:3/2;border-radius:0 0 6px 6px}
+.ab{display:flex;gap:14px;transform:rotate(-18deg);padding-right:4px}
+.ab button{width:54px;height:54px;border-radius:50%;background:var(--ink);color:var(--lemon);font:400 26px/1 var(--font-display);border:0;box-shadow:0 5px 0 #000;cursor:pointer;transition:transform .06s,box-shadow .06s}
+.ab button:active{transform:translateY(4px);box-shadow:0 1px 0 #000}
+.crank{position:absolute;right:0;top:44%;width:80px;height:80px;touch-action:none;cursor:grab;border-radius:50%}
+.crank:active{cursor:grabbing}
+.crank::before{content:"";position:absolute;left:-4px;top:50%;width:34px;height:34px;margin-top:-17px;background:var(--lemon-deep);border:3px solid var(--ink);border-radius:7px}
+.crank__hub{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px;border-radius:50%;background:var(--lemon);border:3px solid var(--ink);z-index:2}
+.crank__arm{position:absolute;left:50%;top:50%;width:42px;height:10px;margin-top:-5px;background:var(--ink);border-radius:5px;transform-origin:0 50%;transform:rotate(-35deg);z-index:1}
+.crank__knob{position:absolute;right:-10px;top:50%;width:22px;height:22px;margin-top:-11px;border-radius:50%;background:var(--paper);border:3px solid var(--ink)}
+.crank:focus-visible{outline-offset:-2px}
+.device__hint{font:500 15px/1.45 var(--font-body);color:#bdb8aa;margin:24px 0 0;text-align:center;text-wrap:balance}
+
+/* ---------- Answers ---------- */
+.answers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+@media (max-width:980px){.answers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.answers{grid-template-columns:1fr}}
+.answer{background:var(--paper);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:22px;display:flex;flex-direction:column;gap:10px;color:var(--charcoal);min-width:0}
+.answer__q{font:700 12px/1.35 var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--stone-deep);margin:0}
+.answer__a{font:800 25px/1.12 var(--font-body);margin:0;text-wrap:balance}
+.answer p{margin:0;font-size:17px;line-height:1.45}
+.answer .go{margin-top:auto;padding-top:6px;font:700 13px/1 var(--font-mono);color:var(--violet);text-decoration:none;letter-spacing:.06em;text-transform:uppercase}
+.answer .go:hover{text-decoration:underline}
+
+/* ---------- Level 1: flowchart ---------- */
+.figure{background:var(--paper);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:16px;overflow-x:auto}
+.figure svg{display:block;width:100%;min-width:760px;height:auto}
+.fnode rect,.fnode polygon{fill:var(--paper);stroke:var(--ink);stroke-width:2.5;transition:fill .25s}
+.fnode text{font:600 15px var(--font-body);fill:var(--ink);text-anchor:middle;transition:fill .25s}
+.fnode.q polygon{fill:var(--lemon-pale)}
+.fnode.aside rect{fill:var(--parchment);stroke-dasharray:6 5}
+.fnode.end rect{fill:var(--lemon)}
+.fnode.lit rect,.fnode.lit polygon{fill:var(--violet);stroke:var(--violet-deep)}
+.fnode.lit text{fill:#fff}
+.fnode.end.lit rect{fill:var(--teal);stroke:var(--ink)}
+.fnode.end.lit text{fill:var(--ink)}
+.fnode.hint rect{fill:var(--lemon-pale);stroke:var(--violet);stroke-width:4}
+.wire{fill:none;stroke:var(--stone);stroke-width:4}
+.wire.aside{stroke-dasharray:6 6}
+.wire.lit{stroke:var(--violet);stroke-dasharray:10 8;animation:march .6s linear infinite}
+@keyframes march{to{stroke-dashoffset:-18}}
+.wlabel{font:700 12px var(--font-mono);fill:var(--stone-deep);letter-spacing:.06em}
+#token rect{fill:var(--lemon);stroke:var(--ink);stroke-width:3}
+.flow-ctrl{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:22px}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--paper);flex-wrap:wrap}
+.seg button{background:transparent;border:0;padding:11px 14px;font:700 15px/1 var(--font-body);cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:2px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--lemon)}
+.status{font:600 17px/1.4 var(--font-body);margin:0;flex:1 1 280px;min-height:1.4em}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:40px}
+@media (max-width:820px){.trio{grid-template-columns:1fr}}
+.note{border-top:4px solid currentColor;padding-top:14px;min-width:0}
+.note h3{font:800 20px/1.2 var(--font-body);margin:0 0 6px}
+.note p{margin:0;font-size:16px;line-height:1.5}
+
+/* ---------- Level 2: mind map ---------- */
+.mapgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:940px){.mapgrid{grid-template-columns:1fr}}
+.mapfig{background:#2a2821;border:2px solid var(--char-line);padding:12px;overflow-x:auto}
+.mapfig svg{display:block;width:100%;min-width:640px;height:auto}
+.mm-branch{fill:none;stroke:var(--parchment);stroke-width:3;opacity:.75}
+.mapfig.play .mm-branch{stroke-dasharray:100;animation:draw 1.1s ease-out both}
+.mapfig.play .mm-leaf,.mapfig.play .mm-leafline{animation:pop .45s both;animation-delay:var(--d,0s)}
+@keyframes draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mm-node{cursor:pointer}
+.mm-node rect{stroke:var(--ink);stroke-width:3;transition:stroke .2s}
+.mm-node text{pointer-events:none;text-anchor:middle}
+.mm-node .t{font:800 17px var(--font-body)}
+.mm-node .b{font:700 11px var(--font-mono);letter-spacing:.12em}
+.mm-node:hover rect,.mm-node.sel rect,.mm-node:focus-visible rect{stroke:var(--lemon);stroke-width:5}
+.mm-node:focus{outline:none}
+.mm-center rect{fill:var(--lemon);stroke:var(--ink);stroke-width:3}
+.mm-center text{font:400 36px var(--font-display);fill:var(--ink);text-anchor:middle}
+.mm-leaf rect{fill:#3b382f;stroke:#5d594d;stroke-width:1.5}
+.mm-leaf text{font:600 13px var(--font-body);fill:var(--parchment);text-anchor:middle}
+.mm-leafline{stroke:#6c685b;stroke-width:2}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:16px;font:700 12px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:14px;height:14px;border:2px solid var(--ink);display:inline-block}
+.detail{background:var(--paper);color:var(--charcoal);border:2px solid var(--ink);box-shadow:6px 6px 0 #000;padding:24px;min-width:0}
+.detail h3{font:400 46px/.86 var(--font-display);margin:12px 0 18px;text-wrap:balance}
+.badge{display:inline-block;font:700 11px/1 var(--font-mono);letter-spacing:.12em;padding:6px 8px;border:2px solid var(--ink);color:var(--ink)}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px 14px;margin:0}
+.kv dt{font:700 11px/1.7 var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--stone-deep)}
+.kv dd{margin:0;font-size:16px;line-height:1.45}
+.tip{margin:18px 0 0;padding:12px 14px;background:var(--lemon-pale);border-left:5px solid var(--lemon-deep);font:600 15px/1.45 var(--font-body)}
+
+/* ---------- Level 3: game ---------- */
+.game{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr) minmax(0,1fr);gap:22px;align-items:stretch}
+@media (max-width:920px){.game{grid-template-columns:1fr}}
+.panel{background:var(--paper);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:18px;color:var(--charcoal);display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h3{font:400 32px/.9 var(--font-display);margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.panel h3 .badge{font-size:10px}
+.panel p.sub{margin:0;font-size:15px;line-height:1.4;color:var(--stone-deep)}
+.files{list-style:none;margin:0;padding:0;display:grid;gap:8px;align-content:start;min-height:138px}
+.file{display:flex;justify-content:space-between;align-items:center;gap:10px;border:2px solid var(--ink);padding:8px 10px;font:700 14px/1.2 var(--font-mono);background:#fff;animation:slidein .25s both;min-width:0}
+.file span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes slidein{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.st{font:700 10px/1 var(--font-mono);padding:5px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.08em;flex:none;color:var(--ink)}
+.st--unsaved{background:var(--alarm)}
+.st--committed{background:var(--lemon)}
+.st--pushed{background:var(--teal)}
+.file.lost{opacity:.4;text-decoration:line-through}
+.file.lost .st{background:var(--stone)}
+.empty{font:500 15px/1.4 var(--font-body);color:var(--stone-deep);border:2px dashed var(--stone);padding:14px;text-align:center;list-style:none}
+.timer{font:400 84px/.8 var(--font-display);text-align:center;font-variant-numeric:tabular-nums;margin:6px 0 0}
+.tbar{height:18px;border:2px solid var(--ink);background:#fff}
+.tbar i{display:block;height:100%;background:var(--teal);width:100%}
+.tbar.low i{background:var(--alarm)}
+.ctrls{display:grid;gap:10px}
+.panel.boom{animation:shake .55s;background:var(--alarm-pale)}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+.result{margin:22px 0 0;font:700 18px/1.4 var(--font-body);padding:14px 16px;border:2px solid var(--ink);background:var(--paper);color:var(--ink)}
+.result--win{background:var(--teal)}
+.result--lose{background:var(--alarm-pale)}
+
+/* ---------- Level 4: database ---------- */
+.dbgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:960px){.dbgrid{grid-template-columns:1fr}}
+.wiring{display:grid;grid-template-columns:minmax(0,1fr) minmax(24px,.6fr) minmax(0,1.1fr) minmax(24px,.6fr) minmax(0,1fr);align-items:center;margin:24px 0}
+.wnode{background:var(--paper);border:2px solid var(--ink);padding:12px 10px;font:800 15px/1.2 var(--font-body);text-align:center;box-shadow:4px 4px 0 var(--ink);min-width:0;transition:background .3s}
+.wnode small{display:block;margin-top:4px;font:700 10px/1.3 var(--font-mono);color:var(--stone-deep);letter-spacing:.08em;text-transform:uppercase}
+.wnode.on{background:var(--teal)}
+.wnode.on small{color:var(--ink)}
+.cable{height:14px;background:var(--stone);position:relative;overflow:hidden;border-block:2px solid var(--ink)}
+.cable i{position:absolute;inset:0;background:var(--violet);transform-origin:left center;transform:scaleX(var(--p,0));transition:transform .4s}
+.cable.flow::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 14px,var(--lemon) 14px 22px);animation:packets .6s linear infinite}
+@keyframes packets{from{background-position:0 0}to{background-position:22px 0}}
+@media (max-width:560px){
+  .wiring{grid-template-columns:1fr;justify-items:center}
+  .wnode{width:100%}
+  .cable{width:14px;height:30px;border-block:0;border-inline:2px solid var(--ink)}
+  .cable i{transform-origin:top center;transform:scaleY(var(--p,0))}
+  .cable.flow::after{background:repeating-linear-gradient(180deg,transparent 0 10px,var(--lemon) 10px 16px);animation:packetsv .6s linear infinite}
+}
+@keyframes packetsv{from{background-position:0 0}to{background-position:0 16px}}
+.steps{display:grid;gap:10px;list-style:none;padding:0;margin:0}
+.step{display:flex;gap:14px;align-items:flex-start;background:var(--paper);border:2px solid var(--ink);padding:12px 14px}
+.step strong{display:block;font:800 17px/1.25 var(--font-body)}
+.step p{margin:4px 0 0;font-size:15px;line-height:1.45}
+.switch{flex:none;width:58px;height:32px;border-radius:999px;border:2px solid var(--ink);background:var(--stone);position:relative;cursor:pointer;margin-top:2px;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--teal)}
+.switch[aria-checked="true"]::after{left:29px}
+.wire-status{margin:14px 0 0;font:700 15px/1.4 var(--font-mono)}
+.chatbox{background:var(--ink);color:var(--parchment);border:2px solid var(--ink);padding:18px;box-shadow:6px 6px 0 var(--charcoal)}
+.chatbox h3{font:400 34px/.9 var(--font-display);color:var(--lemon);margin:0 0 6px}
+.chatbox p{margin:0 0 12px;font-size:15px;line-height:1.45;color:var(--muted-dark)}
+.chatbox label{display:block;font:700 11px/1 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;color:var(--lemon)}
+.chatbox textarea{width:100%;min-height:96px;background:#2a2821;color:var(--paper);border:2px solid #4a473d;border-radius:6px;padding:12px;font:500 15px/1.45 var(--font-mono);resize:vertical}
+.chatbox textarea::placeholder{color:#8f8a7c}
+.chatbox .row{margin-top:12px;justify-content:space-between}
+.leak-out{margin:12px 0 0;font:600 15px/1.45 var(--font-body);min-height:1.45em;color:var(--parchment)}
+.leak-out.bad{color:#ffb39a}
+.leak-out.good{color:var(--teal)}
+.dbcards{display:grid;gap:14px;margin-top:22px}
+.dbcard{border-top:4px solid var(--ink);padding-top:12px}
+.dbcard h3{font:800 19px/1.2 var(--font-body);margin:0 0 4px}
+.dbcard p{margin:0;font-size:16px;line-height:1.5}
+.siren{position:fixed;inset:0;pointer-events:none;z-index:80}
+.siren.on{animation:siren .3s 6 alternate}
+@keyframes siren{from{background:rgba(255,94,36,0)}to{background:rgba(255,94,36,.38)}}
+
+/* ---------- Level 5: speedrun ---------- */
+.run{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,.8fr);gap:28px;align-items:start}
+@media (max-width:900px){.run{grid-template-columns:1fr}}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.check{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:14px;align-items:start;background:var(--char-2);border:2px solid var(--char-line);padding:14px 16px;cursor:pointer;color:var(--paper);text-align:left;width:100%;transition:background .2s}
+.check:hover{border-color:var(--lemon)}
+.check .num{font:400 34px/.8 var(--font-display);color:var(--lemon)}
+.check strong{display:block;font:800 18px/1.25 var(--font-body)}
+.check .sub{display:block;font-size:15px;line-height:1.45;color:var(--muted-dark);margin-top:4px}
+.check .split{font:700 12px/1.6 var(--font-mono);color:var(--teal);font-variant-numeric:tabular-nums;white-space:nowrap}
+.check[aria-pressed="true"]{background:var(--teal);color:var(--ink);border-color:var(--ink)}
+.check[aria-pressed="true"] .num,.check[aria-pressed="true"] .split{color:var(--ink)}
+.check[aria-pressed="true"] .sub{color:#173b33}
+.check[aria-pressed="true"] .kbd{background:#fff;color:var(--ink);border-color:var(--ink)}
+.clock{position:sticky;top:150px;background:var(--lemon);color:var(--ink);border:2px solid var(--ink);box-shadow:6px 6px 0 #000;padding:22px;display:grid;gap:10px}
+@media (max-width:900px){.clock{position:static}}
+.clock .eyebrow{color:var(--violet)}
+.clock__time{font:400 72px/.85 var(--font-display);font-variant-numeric:tabular-nums}
+.clock__count{font:700 14px/1 var(--font-mono)}
+.clock__note{margin:0;font:600 15px/1.45 var(--font-body)}
+.loop{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:36px;margin-top:72px;align-items:center}
+@media (max-width:900px){.loop{grid-template-columns:1fr}}
+.loop svg{display:block;width:100%;max-width:600px;height:auto}
+.ring{fill:none;stroke:#57534a;stroke-width:5;stroke-dasharray:3 9}
+.station circle{fill:var(--charcoal);stroke:var(--parchment);stroke-width:3;transition:fill .2s,stroke .2s}
+.station text{font:700 15px var(--font-body);fill:var(--parchment);transition:fill .2s}
+.station.on circle{fill:var(--lemon);stroke:var(--lemon)}
+.station.on text{fill:var(--lemon)}
+.loop-title{font:400 34px var(--font-display);fill:var(--lemon);text-anchor:middle}
+.loop-sub{font:700 11px var(--font-mono);fill:var(--muted-dark);text-anchor:middle;letter-spacing:.12em}
+.tips{display:grid;gap:14px;list-style:none;padding:0;margin:20px 0 0}
+.tips li{border-left:6px solid var(--lemon);padding:2px 0 2px 14px;font-size:17px;line-height:1.45}
+.tips b{color:var(--lemon)}
+.h3{font:400 46px/.86 var(--font-display);margin:0;color:var(--lemon)}
+
+/* ---------- Level 6: fight ---------- */
+.arena{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:22px;align-items:stretch}
+@media (max-width:900px){.arena{grid-template-columns:1fr}}
+.fighter{background:var(--paper);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:20px;color:var(--ink);display:grid;gap:14px;align-content:start;min-width:0}
+.fighter.hit{animation:shake .45s}
+.fighter__top{display:flex;gap:16px;align-items:center}
+.fighter__top svg{width:88px;flex:none;height:auto}
+.fighter__name{font:400 40px/.85 var(--font-display);margin:0}
+.fighter__sub{margin:4px 0 0;font:700 11px/1.3 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--stone-deep)}
+.hp{height:18px;border:2px solid var(--ink);background:#fff}
+.hp i{display:block;height:100%;background:var(--teal);width:100%;transition:width .5s}
+.hp.low i{background:var(--alarm)}
+.hp-label{display:flex;justify-content:space-between;font:700 11px/1 var(--font-mono);letter-spacing:.1em;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.stats{display:grid;gap:8px}
+.stat{display:grid;grid-template-columns:minmax(0,1fr) 112px 22px;gap:10px;align-items:center;font:600 14px/1.25 var(--font-body)}
+.stat b{font:700 12px var(--font-mono);text-align:right;font-variant-numeric:tabular-nums}
+.pips{display:grid;grid-template-columns:repeat(10,1fr);gap:2px}
+.pips i{height:12px;background:#e3dfd2;border:1px solid #cfcabb}
+.pips i.f{background:var(--violet);border-color:var(--violet-deep)}
+.stats-note{margin:0;font:600 12px/1.3 var(--font-mono);color:var(--stone-deep)}
+.vs{display:grid;place-items:center;align-content:center;gap:16px}
+.vs b{font:400 88px/.8 var(--font-display);color:var(--ink)}
+.fightlog{margin:28px 0 0;display:grid;gap:10px;list-style:none;padding:0}
+.round{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;background:var(--paper);border:2px solid var(--ink);padding:12px 16px;align-items:center;color:var(--ink);animation:slidein .3s both}
+.round .rn{font:400 30px/.9 var(--font-display)}
+.round strong{display:block;font:800 17px/1.25 var(--font-body)}
+.round p{margin:2px 0 0;font-size:15px;line-height:1.4}
+.round .w{font:700 11px/1 var(--font-mono);padding:7px 9px;border:2px solid var(--ink);white-space:nowrap;letter-spacing:.08em}
+.w--cloud{background:var(--teal)}
+.w--laptop{background:var(--violet);color:#fff}
+.w--tie{background:var(--stone)}
+@media (max-width:560px){.round{grid-template-columns:1fr}.round .rn{display:none}.round .w{justify-self:start}}
+.ko{text-align:center;margin:30px 0 0;display:grid;gap:10px;justify-items:center}
+.ko b{font:400 clamp(56px,9vw,112px)/.8 var(--font-display)}
+.ko p{margin:0;max-width:60ch;font:600 17px/1.45 var(--font-body)}
+.table-wrap{overflow-x:auto;margin-top:48px;border:2px solid var(--ink);background:var(--paper);box-shadow:6px 6px 0 var(--ink)}
+.table-wrap table{width:100%;border-collapse:collapse;min-width:680px;color:var(--ink)}
+.table-wrap caption{caption-side:top;text-align:left;padding:14px 16px 6px;font:400 30px/.9 var(--font-display)}
+.table-wrap th,.table-wrap td{padding:12px 16px;text-align:left;vertical-align:top;border-bottom:1.5px solid #ddd6c5;font-size:16px;line-height:1.45}
+.table-wrap thead th{background:var(--ink);color:var(--lemon);font:700 12px/1.2 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+.table-wrap tbody th{font-weight:800;width:22%}
+
+/* ---------- Boss quiz ---------- */
+.scorebar{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;margin:0 0 28px}
+.scorebar b{font:400 64px/.8 var(--font-display);color:var(--lemon);font-variant-numeric:tabular-nums}
+.scorebar p{margin:0;font:700 18px/1.4 var(--font-body);max-width:52ch}
+.quiz{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;list-style:none;padding:0;margin:0}
+@media (max-width:820px){.quiz{grid-template-columns:1fr}}
+.q{background:var(--paper);color:var(--ink);border:2px solid var(--violet-deep);box-shadow:6px 6px 0 var(--violet-deep);padding:20px;display:grid;gap:10px;align-content:start;min-width:0}
+.q .n{font:700 11px/1 var(--font-mono);color:var(--violet);letter-spacing:.14em}
+.q h3{font:800 19px/1.3 var(--font-body);margin:0 0 4px}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid var(--ink);border-radius:6px;padding:11px 13px;font:600 16px/1.35 var(--font-body);color:var(--ink);cursor:pointer}
+.opt:hover:not(:disabled){background:var(--lemon-pale)}
+.opt.right{background:var(--teal)}
+.opt.wrong{background:#ffc9b8;text-decoration:line-through}
+.opt:disabled{cursor:default}
+.fb{margin:2px 0 0;font:600 15px/1.4 var(--font-body);color:var(--charcoal)}
+
+/* ---------- Trophies & footer ---------- */
+.trophies{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;list-style:none;padding:0;margin:0}
+@media (max-width:900px){.trophies{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.trophies{grid-template-columns:1fr}}
+.tro{border:2px solid #3d3a31;padding:14px;display:grid;grid-template-columns:30px minmax(0,1fr);gap:4px 12px;background:#26241e;color:#8a8577;align-content:start}
+.tro svg{grid-row:span 3;width:30px;height:auto}
+.tro b{font:800 16px/1.25 var(--font-body);color:#9a9586}
+.tro small{font:500 14px/1.35 var(--font-body)}
+.tro .xpv{font:700 11px/1 var(--font-mono);letter-spacing:.08em}
+.tro.got{border-color:var(--lemon);background:var(--charcoal);color:var(--parchment)}
+.tro.got b{color:var(--lemon)}
+.tro.got .xpv{color:var(--teal)}
+.save-row{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;margin-bottom:24px}
+.save-row p{margin:0;font:700 15px/1 var(--font-mono);font-variant-numeric:tabular-nums}
+.danger{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center;margin-top:56px;padding:26px;border:3px dashed var(--alarm)}
+@media (max-width:560px){.danger{grid-template-columns:1fr;justify-items:center;text-align:center}}
+.bigred{width:128px;height:128px;border-radius:50%;background:var(--alarm);border:4px solid #000;box-shadow:0 9px 0 var(--alarm-deep),0 9px 0 4px #000;color:var(--ink);font:400 28px/.85 var(--font-display);cursor:pointer;transition:transform .06s,box-shadow .06s;padding:10px}
+.bigred:active{transform:translateY(7px);box-shadow:0 2px 0 var(--alarm-deep),0 2px 0 4px #000}
+.danger h3{font:400 40px/.9 var(--font-display);margin:0 0 8px;color:var(--alarm)}
+.danger p{margin:0;font-size:17px;line-height:1.45}
+.dnp-msg{margin-top:10px!important;font-weight:700;color:var(--lemon);min-height:1.45em}
+.footer{margin-top:64px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;border-top:2px solid #3d3a31;padding-top:32px}
+@media (max-width:760px){.footer{grid-template-columns:1fr}}
+.footer h3{font:700 12px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lemon);margin:0 0 12px}
+.footer ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.footer li,.footer p{font-size:15px;line-height:1.5;margin:0;color:var(--muted-dark)}
+.footer a{color:var(--parchment);text-underline-offset:3px}
+.footer a:hover{color:var(--lemon)}
+
+/* ---------- Cranky, toasts, effects ---------- */
+.cranky{position:fixed;left:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:flex-end;gap:12px;pointer-events:none}
+.cranky__btn{pointer-events:auto;width:74px;background:transparent;border:0;padding:0;cursor:pointer;filter:drop-shadow(3px 3px 0 #000);animation:bob 3.2s ease-in-out infinite}
+.cranky__btn svg{width:100%;height:auto;display:block}
+@keyframes bob{50%{transform:translateY(-5px)}}
+.bubble{pointer-events:auto;max-width:min(360px,calc(100vw - 122px));background:var(--paper);color:var(--ink);border:2.5px solid var(--ink);box-shadow:4px 4px 0 #000;padding:11px 14px 12px;font:600 15px/1.42 var(--font-body);position:relative;margin-bottom:30px;cursor:pointer;animation:toastin .22s both}
+.bubble::before{content:"";position:absolute;left:-9px;bottom:14px;width:14px;height:14px;background:var(--paper);border-left:2.5px solid var(--ink);border-bottom:2.5px solid var(--ink);transform:rotate(45deg)}
+.bubble .who{display:block;font:700 10px/1 var(--font-mono);letter-spacing:.14em;color:var(--violet);margin-bottom:5px}
+.toasts{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:grid;gap:10px;pointer-events:none;justify-items:end}
+@media (max-width:640px){.toasts{left:16px;right:16px;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 118px);justify-items:stretch}}
+.toast{background:var(--ink);color:var(--parchment);border:3px solid var(--lemon);padding:10px 14px;display:grid;grid-template-columns:34px minmax(0,1fr);gap:2px 12px;align-items:center;box-shadow:5px 5px 0 #000;animation:toastin .3s both;max-width:360px}
+.toast svg{grid-row:span 2;width:34px;height:auto}
+.toast small{font:700 10px/1.2 var(--font-mono);color:var(--lemon);letter-spacing:.12em}
+.toast b{font:800 16px/1.2 var(--font-body)}
+@keyframes toastin{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:85}
+html.cheat main{filter:hue-rotate(150deg) saturate(1.25)}
+html.cheat::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:90;background:repeating-linear-gradient(0deg,rgba(0,0,0,.13) 0 2px,transparent 2px 4px)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<header class="hud">
+  <div class="hud__in">
+    <button class="brand" id="brand" type="button" aria-label="Cloud Cartridge. Back to top."><span id="brandIcon"></span>CLOUD CARTRIDGE</button>
+    <nav class="levels" aria-label="Levels">
+      <a href="#level-1" data-sec="level-1">1 · Project?</a>
+      <a href="#level-2" data-sec="level-2">2 · Files</a>
+      <a href="#level-3" data-sec="level-3">3 · Saving</a>
+      <a href="#level-4" data-sec="level-4">4 · Database</a>
+      <a href="#level-5" data-sec="level-5">5 · Setup</a>
+      <a href="#level-6" data-sec="level-6">6 · Web vs Desktop</a>
+      <a href="#boss" data-sec="boss">Boss</a>
+    </nav>
+    <div class="hud__right">
+      <div class="xp" aria-label="Experience"><span id="lvl">LV 1</span><span class="xp__bar"><i id="xpFill"></i></span><span id="xpNum">0 XP</span></div>
+      <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false">SOUND OFF</button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+<!-- ================= HERO ================= -->
+<section class="band band--charcoal hero" id="top">
+  <div class="sky" id="sky" aria-hidden="true"></div>
+  <div class="wrap hero__grid">
+    <div>
+      <p class="eyebrow">Claude Code on the web · a field guide in six levels</p>
+      <h1 class="hero__title">Claude Code, in the <span class="hl">cloud</span>.</h1>
+      <p class="lead">Do you need a Project? Where do your files live, and do they stick around? Can you plug in logins and a real database like Supabase or Pinecone? How is this different from Claude Code Desktop? Six short levels answer all of it. A sarcastic cloud named Cranky supervises.</p>
+      <div class="row">
+        <a class="btn btn--violet" href="#level-1" id="pressStart">Press Start</a>
+        <a class="btn btn--ghost" href="#answers" id="skipAnswers">Just give me the answers</a>
+      </div>
+      <div class="cabinet">
+        <p>Confetti cabinet · use responsibly, or don’t</p>
+        <div class="row">
+          <button class="btn btn--lemon btn--sm" type="button" data-fx="classic">Classic confetti</button>
+          <button class="btn btn--teal btn--sm" type="button" data-fx="pixel">Pixel storm</button>
+          <button class="btn btn--sm" type="button" data-fx="words">Commit rain</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-fx="sad">Sad confetti</button>
+        </div>
+      </div>
+    </div>
+    <div class="device">
+      <div class="console">
+        <div class="screen-wrap"><canvas id="screen" width="200" height="120" aria-label="Console screen showing how a cloud session works"></canvas></div>
+        <div class="console__label"><span>CLOUD CARTRIDGE</span><span>v2 · 1-BIT</span></div>
+        <div class="controls">
+          <div class="dpad" aria-label="Direction pad">
+            <button class="u" type="button" data-d="up" aria-label="Up: commit rain">▲</button>
+            <button class="l" type="button" data-d="left" aria-label="Previous screen">◀</button>
+            <span class="c" aria-hidden="true"></span>
+            <button class="r" type="button" data-d="right" aria-label="Next screen">▶</button>
+            <button class="d" type="button" data-d="down" aria-label="Down: sad confetti">▼</button>
+          </div>
+          <div class="ab">
+            <button type="button" id="btnB" aria-label="B: ask Cranky for an opinion">B</button>
+            <button type="button" id="btnA" aria-label="A: confetti">A</button>
+          </div>
+        </div>
+      </div>
+      <div class="crank" id="crank" role="slider" tabindex="0" aria-label="Crank. Turn it to change the screen." aria-valuemin="1" aria-valuemax="4" aria-valuenow="1" aria-valuetext="Screen 1 of 4">
+        <div class="crank__hub"></div>
+        <div class="crank__arm" id="crankArm"><div class="crank__knob"></div></div>
+      </div>
+      <p class="device__hint">Drag the crank in circles, or scroll on it. A fires confetti. B asks Cranky for an opinion. You will regret B.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ANSWERS ================= -->
+<section class="band band--lemon" id="answers">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">The cheat sheet</p>
+      <h2 class="h2">Your six questions, answered up front.</h2>
+      <p class="lead">Busy? Read these and leave. Curious? Each one links to the level that explains it.</p>
+    </div>
+    <div class="answers">
+      <article class="answer">
+        <p class="answer__q">Do I need to create a Project?</p>
+        <p class="answer__a">No.</p>
+        <p>Claude Code on the web needs a GitHub repo and an environment. That’s it. “Projects” in regular claude.ai chat are a separate feature.</p>
+        <a class="go" href="#level-1">Level 1 · the flowchart →</a>
+      </article>
+      <article class="answer">
+        <p class="answer__q">Where are my knowledge files stored?</p>
+        <p class="answer__a">In your GitHub repo.</p>
+        <p>Put a <span class="kbd">CLAUDE.md</span> and a <span class="kbd">docs/</span> folder there. Every session starts from a fresh copy of the repo.</p>
+        <a class="go" href="#level-2">Level 2 · the storage map →</a>
+      </article>
+      <article class="answer">
+        <p class="answer__q">Are they persistent?</p>
+        <p class="answer__a">The repo is. The cloud computer isn’t.</p>
+        <p>Each session runs on a temporary computer that gets reclaimed when it sits idle. Commit and push, or lose it.</p>
+        <a class="go" href="#level-3">Level 3 · the self-destruct game →</a>
+      </article>
+      <article class="answer">
+        <p class="answer__q">Can I add logins and a database?</p>
+        <p class="answer__a">Yes. Supabase, Pinecone, and more.</p>
+        <p>Use a connector, or store the key in environment settings and allow the domain. Your data lives in the database, so it survives.</p>
+        <a class="go" href="#level-4">Level 4 · the wiring puzzle →</a>
+      </article>
+      <article class="answer">
+        <p class="answer__q">How do I set it up?</p>
+        <p class="answer__a">Ten plain steps.</p>
+        <p>Sign in, connect GitHub, pick a repo, pick an environment, add secrets the safe way, then type what you want.</p>
+        <a class="go" href="#level-5">Level 5 · the speedrun →</a>
+      </article>
+      <article class="answer">
+        <p class="answer__q">How is it different from Desktop?</p>
+        <p class="answer__a">Their computers vs. yours.</p>
+        <p>The web version runs on Anthropic’s computers and keeps going when your laptop is closed. Desktop runs on your computer and sees your local files.</p>
+        <a class="go" href="#level-6">Level 6 · the fight →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEVEL 1 ================= -->
+<section class="band band--parchment" id="level-1">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Level 1 · first reveal</p>
+      <h2 class="h2">Do I need a Project?</h2>
+      <p class="lead">Short answer: no. Pick your situation, press Run, and follow the token through the flow.</p>
+    </div>
+    <div class="figure">
+      <svg id="flow" viewBox="0 0 1000 400" role="img" aria-label="Flowchart: you need a GitHub repo and an environment, not a Project.">
+        <path class="wire" id="w-A-Q1" d="M180 190 H215"/>
+        <path class="wire" id="w-Q1-S1" d="M405 190 H440"/>
+        <path class="wire" id="w-Q1-N1" d="M310 260 V300"/>
+        <path class="wire" id="w-N1-S1" d="M385 340 H520 V230"/>
+        <path class="wire" id="w-S1-Q2" d="M600 190 H630"/>
+        <path class="wire aside" id="w-Q2-P" d="M720 120 V90"/>
+        <path class="wire" id="w-Q2-S2" d="M810 190 H840"/>
+        <path class="wire" id="w-S2-E" d="M915 230 V290"/>
+        <text class="wlabel" x="422" y="176" text-anchor="middle">YES</text>
+        <text class="wlabel" x="322" y="286">NO</text>
+        <text class="wlabel" x="732" y="110">CURIOUS?</text>
+        <text class="wlabel" x="825" y="176" text-anchor="middle">NOPE</text>
+        <g class="fnode" id="f-A"><rect x="10" y="150" width="170" height="80" rx="40"/><text x="95" y="184">I want Claude</text><text x="95" y="205">coding in the cloud</text></g>
+        <g class="fnode q" id="f-Q1"><polygon points="310,120 405,190 310,260 215,190"/><text x="310" y="186">Got a GitHub</text><text x="310" y="206">repo?</text></g>
+        <g class="fnode" id="f-N1"><rect x="235" y="300" width="150" height="80"/><text x="310" y="334">Make an empty</text><text x="310" y="355">repo. 2 minutes.</text></g>
+        <g class="fnode" id="f-S1"><rect x="440" y="150" width="160" height="80"/><text x="520" y="184">Open claude.ai/code</text><text x="520" y="205">+ connect GitHub</text></g>
+        <g class="fnode q" id="f-Q2"><polygon points="720,120 810,190 720,260 630,190"/><text x="720" y="186">Need a</text><text x="720" y="206">“Project”?</text></g>
+        <g class="fnode aside" id="f-P"><rect x="620" y="10" width="200" height="80"/><text x="720" y="44">Chat Projects hold files</text><text x="720" y="65">for chat. Optional here.</text></g>
+        <g class="fnode" id="f-S2"><rect x="840" y="150" width="150" height="80"/><text x="915" y="174">Pick repo +</text><text x="915" y="194">environment.</text><text x="915" y="214">Type your ask.</text></g>
+        <g class="fnode end" id="f-E"><rect x="830" y="290" width="165" height="90"/><text x="912" y="318">Claude codes,</text><text x="912" y="339">pushes a branch,</text><text x="912" y="360">opens a PR.</text></g>
+        <g id="token" transform="translate(95 190)" style="opacity:0"><rect x="-9" y="-9" width="18" height="18"/></g>
+      </svg>
+    </div>
+    <div class="flow-ctrl">
+      <div class="seg" role="group" aria-label="Your situation">
+        <button type="button" data-route="yes" aria-pressed="true">I have a GitHub repo</button>
+        <button type="button" data-route="no" aria-pressed="false">I don’t have one yet</button>
+      </div>
+      <button class="btn btn--violet" type="button" id="runFlow">Run the flow</button>
+      <p class="status" id="flowStatus" aria-live="polite">Pick a path, then press Run.</p>
+    </div>
+    <div class="trio">
+      <div class="note"><h3>Claude Code on the web</h3><p>Needs a GitHub repo and an environment. No Project required. Your repo is the project.</p></div>
+      <div class="note"><h3>claude.ai chat Projects</h3><p>A chat feature for grouping conversations with uploaded files and custom instructions. Useful, but a different room.</p></div>
+      <div class="note"><h3>See “Projects” in Claude Code?</h3><p>It’s an optional way to group related sessions. You can ignore it on day one and nothing breaks.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEVEL 2 ================= -->
+<section class="band band--charcoal" id="level-2">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Level 2 · second reveal</p>
+      <h2 class="h2">Where does my stuff live?</h2>
+      <p class="lead">Six places, four kinds of memory. Tap any branch to see where it’s stored, how long it lasts, and what to do about it.</p>
+    </div>
+    <div class="mapgrid">
+      <div>
+        <div class="mapfig" id="mapfig"><svg id="mindmap" viewBox="0 0 900 560" role="group" aria-label="Mind map of where your files and settings are stored"></svg></div>
+        <div class="legend" aria-label="Legend">
+          <span><i style="background:var(--teal)"></i>Permanent</span>
+          <span><i style="background:var(--violet)"></i>Saved settings</span>
+          <span><i style="background:var(--alarm)"></i>Temporary</span>
+          <span><i style="background:var(--stone)"></i>Chat only</span>
+        </div>
+      </div>
+      <aside class="detail" id="mmDetail" aria-live="polite">
+        <span class="badge" id="mmBadge">PERMANENT</span>
+        <h3 id="mmTitle">GitHub repo</h3>
+        <dl class="kv">
+          <dt>Stored</dt><dd id="mmWhere"></dd>
+          <dt>Lasts</dt><dd id="mmLasts"></dd>
+          <dt>Holds</dt><dd id="mmWhat"></dd>
+        </dl>
+        <p class="tip" id="mmTip"></p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEVEL 3 ================= -->
+<section class="band band--lemon" id="level-3">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Level 3 · mini-game</p>
+      <h2 class="h2">Beat the self-destruct.</h2>
+      <p class="lead">Every session runs on a temporary cloud computer. When it sits idle long enough, it gets reclaimed, and anything you didn’t push to GitHub goes with it. Practice here, where the stakes are fake.</p>
+    </div>
+    <div class="game">
+      <div class="panel" id="gBox">
+        <h3>Cloud computer <span class="badge" style="background:var(--alarm)">TEMPORARY</span></h3>
+        <p class="sub">Claude writes files here. They are not safe yet.</p>
+        <ul class="files" id="gFiles"></ul>
+      </div>
+      <div class="panel">
+        <h3>Idle timer</h3>
+        <p class="timer" id="gTime" aria-live="off">00:14</p>
+        <div class="tbar" id="gBarWrap"><i id="gBar"></i></div>
+        <div class="ctrls">
+          <button class="btn btn--violet" type="button" id="gStart">Start the session</button>
+          <button class="btn" type="button" id="gCommit" disabled>git commit</button>
+          <button class="btn btn--teal" type="button" id="gPush" disabled>git push</button>
+          <button class="btn btn--alarm btn--sm" type="button" id="gSnack" disabled>Go get a snack</button>
+        </div>
+      </div>
+      <div class="panel" id="gVaultPanel">
+        <h3>GitHub repo <span class="badge" style="background:var(--teal)">PERMANENT</span></h3>
+        <p class="sub">Only pushed files land here. They survive anything.</p>
+        <ul class="files" id="gVault"></ul>
+      </div>
+    </div>
+    <p class="result" id="gResult" hidden aria-live="polite"></p>
+  </div>
+</section>
+
+<!-- ================= LEVEL 4 ================= -->
+<section class="band band--parchment" id="level-4">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Level 4 · wiring puzzle</p>
+      <h2 class="h2">Plug in a real database.</h2>
+      <p class="lead">Yes, you can use Supabase, Pinecone, and real logins from the cloud. The cloud computer forgets, but the database remembers. Your data lives in the database, so it survives every session.</p>
+    </div>
+    <div class="dbgrid">
+      <div>
+        <div class="seg" role="group" aria-label="Connection route">
+          <button type="button" data-rt="A" aria-pressed="true">Route A · Connector (easiest)</button>
+          <button type="button" data-rt="B" aria-pressed="false">Route B · API key + allowlist</button>
+        </div>
+        <div class="wiring" aria-hidden="true">
+          <div class="wnode" id="wSess">Your session<small>cloud computer</small></div>
+          <div class="cable" id="cab1"><i></i></div>
+          <div class="wnode" id="wGate"><span id="gateName">Connector</span><small id="gateSub">via Anthropic</small></div>
+          <div class="cable" id="cab2"><i></i></div>
+          <div class="wnode" id="wDb">Supabase · Pinecone<small>remembers forever</small></div>
+        </div>
+        <ol class="steps" id="steps"></ol>
+        <p class="wire-status" id="wireStatus" aria-live="polite"></p>
+      </div>
+      <div>
+        <div class="chatbox">
+          <h3>Leak Detector 3000</h3>
+          <p>A practice chat box. Nothing you type leaves this page. Type a normal request, or paste something that looks like a key and see what happens.</p>
+          <label for="leakInput">Message Claude</label>
+          <textarea id="leakInput" placeholder="Build a signup page that saves emails to Supabase…"></textarea>
+          <div class="row">
+            <button class="btn btn--lemon btn--sm" type="button" id="leakSend">Send (pretend)</button>
+            <button class="btn btn--ghost btn--sm" type="button" id="leakBait">Paste a fake key for me</button>
+          </div>
+          <p class="leak-out" id="leakOut" aria-live="polite"></p>
+        </div>
+        <div class="dbcards">
+          <div class="dbcard"><h3>Supabase</h3><p>A Postgres database with logins, file storage, and APIs built in. A good home for users, orders, and app data.</p></div>
+          <div class="dbcard"><h3>Pinecone</h3><p>A vector database. It stores meaning, so AI apps can search notes and documents by idea instead of exact words.</p></div>
+          <div class="dbcard"><h3>Auth (logins)</h3><p>Your app’s sign-in system. Supabase Auth handles passwords, magic links, and Google sign-in. Claude writes the code. The keys stay in environment settings.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEVEL 5 ================= -->
+<section class="band band--charcoal" id="level-5">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Level 5 · speedrun</p>
+      <h2 class="h2">Setup, in ten moves.</h2>
+      <p class="lead">Plain steps, one at a time. Tap each one when you finish it. The clock starts on your first tap. This browser remembers your progress.</p>
+    </div>
+    <div class="run">
+      <ol class="checklist" id="checklist"></ol>
+      <div class="clock" aria-live="polite">
+        <p class="eyebrow">Speedrun clock</p>
+        <div class="clock__time" id="clockTime">00:00.00</div>
+        <div class="clock__count" id="clockCount">0 / 10 steps</div>
+        <p class="clock__note" id="clockNote">Tap step 1 to start the clock.</p>
+        <button class="btn btn--sm" type="button" id="runReset">Reset run</button>
+      </div>
+    </div>
+    <div class="loop">
+      <svg id="loopSvg" viewBox="0 0 600 380" role="img" aria-label="The daily loop: you ask, Claude works in the cloud, it pushes a branch, a pull request opens, you review and merge, repeat."></svg>
+      <div>
+        <h3 class="h3">How to work with it, daily.</h3>
+        <ul class="tips">
+          <li><b>One task per session.</b> Small, clear jobs finish faster and are easier to review.</li>
+          <li><b>Ask for a plan first</b> on big changes: “Show me your plan before you write code.”</li>
+          <li><b>Changed settings or connectors?</b> Start a new session. Sessions read them when they start.</li>
+          <li><b>Run several at once.</b> Each session gets its own cloud computer.</li>
+          <li><b>Check in from your phone.</b> Sessions keep running when your laptop is closed.</li>
+          <li><b>Secrets stay out of chat and out of the repo.</b> Environment settings only.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEVEL 6 ================= -->
+<section class="band band--lemon" id="level-6">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Level 6 · versus mode</p>
+      <h2 class="h2">Web vs Desktop.</h2>
+      <p class="lead">Same Claude, two homes. Claude Code on the web runs on Anthropic’s computers. Claude Code Desktop runs on yours. Press Fight to see who wins what.</p>
+    </div>
+    <div class="arena">
+      <div class="fighter" id="fCloud">
+        <div class="fighter__top"><span id="avCloud"></span><div><p class="fighter__name">CLOUD</p><p class="fighter__sub">Claude Code on the web</p></div></div>
+        <div><div class="hp-label"><span>HP</span><span id="hpCloudN">100</span></div><div class="hp" id="hpCloud"><i></i></div></div>
+        <div class="stats" id="statsCloud"></div>
+      </div>
+      <div class="vs"><b>VS</b><button class="btn btn--violet" type="button" id="fightBtn">Fight!</button></div>
+      <div class="fighter" id="fLaptop">
+        <div class="fighter__top"><span id="avLaptop"></span><div><p class="fighter__name">LAPTOP</p><p class="fighter__sub">Claude Code Desktop</p></div></div>
+        <div><div class="hp-label"><span>HP</span><span id="hpLaptopN">100</span></div><div class="hp" id="hpLaptop"><i></i></div></div>
+        <div class="stats" id="statsLaptop"></div>
+      </div>
+    </div>
+    <p class="stats-note" style="margin-top:14px">Stats: Cranky’s totally scientific ratings, out of 10.</p>
+    <ol class="fightlog" id="fightLog"></ol>
+    <div class="ko" id="ko" hidden>
+      <b>DOUBLE K.O.</b>
+      <p>Nobody wins. Use both. Web for fire-and-forget tasks you can check from anywhere. Desktop for hands-on work with files and tools on your own machine.</p>
+      <p><span class="kbd">Combo move unlocked: Teleport.</span> Pull a cloud session down to your own terminal with <span class="kbd">claude --teleport</span> and keep going locally.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>The boring but useful table</caption>
+        <thead><tr><th scope="col">Question</th><th scope="col">Web (cloud)</th><th scope="col">Desktop (your computer)</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Where does it run?</th><td>A temporary computer in Anthropic’s cloud</td><td>Your own computer</td></tr>
+          <tr><th scope="row">What files can it see?</th><td>Your GitHub repo</td><td>Folders on your computer</td></tr>
+          <tr><th scope="row">Laptop closed?</th><td>Keeps working</td><td>Pauses when your computer sleeps</td></tr>
+          <tr><th scope="row">Saving work</th><td>Commit and push to GitHub, or lose it</td><td>Files save to your disk; push when you want</td></tr>
+          <tr><th scope="row">Secrets and keys</th><td>Environment settings (API credentials or environment variables)</td><td>Local <span class="kbd">.env</span> files you never commit</td></tr>
+          <tr><th scope="row">Databases</th><td>Connectors, or domains you allow</td><td>Anything your computer can reach, including localhost</td></tr>
+          <tr><th scope="row">From your phone</th><td>Yes, in the Claude app</td><td>Through Remote Control, while your computer stays on</td></tr>
+          <tr><th scope="row">Best for</th><td>Many tasks at once, checked from anywhere</td><td>Hands-on work with local files and tools</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BOSS ================= -->
+<section class="band band--violet" id="boss">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow">Final level</p>
+      <h2 class="h2">Boss fight: the quiz.</h2>
+      <p class="lead">Six questions. Cranky grades on a curve, and the curve is mean.</p>
+    </div>
+    <div class="scorebar"><b id="score">0/6</b><p id="rank">Answer all six to get your rank.</p><button class="btn btn--sm" type="button" id="quizReset">Retry</button></div>
+    <ol class="quiz" id="quiz"></ol>
+  </div>
+</section>
+
+<!-- ================= TROPHIES ================= -->
+<section class="band band--ink" id="trophy-case">
+  <div class="wrap">
+    <div class="level-head">
+      <p class="eyebrow" style="color:var(--lemon)">Save file</p>
+      <h2 class="h2">Trophy case.</h2>
+    </div>
+    <div class="save-row">
+      <p><span id="xpTotal">0</span> / <span id="xpMax">0</span> XP collected</p>
+      <button class="btn btn--ghost btn--sm" type="button" id="resetAll">Reset all progress</button>
+    </div>
+    <ul class="trophies" id="trophies"></ul>
+    <div class="danger">
+      <button class="bigred" type="button" id="dnp">DO NOT PRESS</button>
+      <div>
+        <h3>Danger zone</h3>
+        <p>This button does nothing useful. It says so right on it. There is also a cheat code. A classic one. No keyboard? Tap the logo seven times.</p>
+        <p class="dnp-msg" id="dnpMsg" aria-live="polite"></p>
+      </div>
+    </div>
+    <footer class="footer">
+      <div>
+        <h3>Sources</h3>
+        <ul>
+          <li><a href="https://code.claude.com/docs/en/claude-code-on-the-web">Claude Code on the web</a> (official docs)</li>
+          <li><a href="https://code.claude.com/docs/en/cloud-environments#network-access">Cloud environments and network access</a> (official docs)</li>
+          <li><a href="https://claude.ai/customize/connectors">claude.ai connectors settings</a></li>
+          <li><a href="https://supabase.com/blog/claude-connector">Supabase’s Claude connector</a> (Supabase blog)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Credits &amp; fine print</h3>
+        <p>Facts checked October 3, 2026. Features change; the docs win any argument. Design reference found through Refero: Playdate (play.date) for the lemon-and-charcoal palette and the handheld with a crank, Obscura (obscura.net) for pixel headlines and pixel clouds. Cranky’s opinions are his own.</p>
+      </div>
+    </footer>
+  </div>
+</section>
+
+</main>
+
+<div class="cranky">
+  <button class="cranky__btn" id="crankyBtn" type="button" aria-label="Cranky the cloud. Tap for a hot take."></button>
+  <div class="bubble" id="bubble" hidden role="status"><span class="who">CRANKY SAYS</span><span id="bubbleText"></span></div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="siren" id="siren" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const rand = a => a[Math.floor(Math.random() * a.length)];
+const center = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let cheat = false;
+
+/* ---------------- Pixel art ---------------- */
+const INK = '#1e1c17';
+const CLOUD = [
+  '......XXXXX.........',
+  '.....XWWWWWX.XXXX...',
+  '....XWWWWWWWXWWWWX..',
+  '..XXXWWWWWWWWWWWWWX.',
+  '.XWWWWWWWWWWWWWWWWWX',
+  'XWWWWWWWWWWWWWWWWWWX',
+  'XWWWWWWWWWWWWWWWWWWX',
+  'XWWWWWWWWWWWWWWWWWWX',
+  'XWWWWWWWWWWWWWWWWWWX',
+  'XWWWWWWWWWWWWWWWWWWX',
+  '.XWWWWWWWWWWWWWWWWX.',
+  '..XXXXXXXXXXXXXXXX..'
+];
+const FACES = {
+  meh:   [[5,6],[6,6],[13,6],[14,6],[8,9],[9,9],[10,9],[11,9]],
+  smug:  [[4,6],[5,6],[6,6],[7,6],[12,6],[13,6],[14,6],[15,6],[6,7],[14,7],[9,9],[10,9],[11,9],[12,8]],
+  shock: [[5,5],[6,5],[5,6],[6,6],[13,5],[14,5],[13,6],[14,6],[9,8],[10,8],[9,9],[10,9]],
+  happy: [[4,7],[5,6],[6,6],[7,7],[12,7],[13,6],[14,6],[15,7],[7,8],[8,9],[9,9],[10,9],[11,9],[12,8],[3,8,'P'],[16,8,'P']],
+  sleep: [[4,7],[5,7],[6,7],[13,7],[14,7],[15,7],[9,9],[10,9]],
+  cool:  [[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[16,6],[4,7],[5,7],[6,7],[7,7],[12,7],[13,7],[14,7],[15,7],[9,9],[10,9],[11,9],[12,8]],
+  none:  []
+};
+const LAPTOP = [
+  '..XXXXXXXXXXXXXXXX..',
+  '..XSSSSSSSSSSSSSSX..',
+  '..XSSSSSSSSSSSSSSX..',
+  '..XSSESSSSSSSSESSX..',
+  '..XSSSSSSSSSSSSSSX..',
+  '..XSSSSSMMMMSSSSSX..',
+  '..XSSSSSSSSSSSSSSX..',
+  '..XXXXXXXXXXXXXXXX..',
+  'XXXXXXXXXXXXXXXXXXXX',
+  'XKKKKKKKKKKKKKKKKKKX',
+  '.XXXXXXXXXXXXXXXXXX.'
+];
+const TROPHY = [
+  '..XXXXXXXX..',
+  'XXXYYYYYYXXX',
+  'XYXYYYYYYXYX',
+  'XYXYYYYYYXYX',
+  '.XXYYYYYYXX.',
+  '...XYYYYX...',
+  '....XYYX....',
+  '.....XX.....',
+  '.....XX.....',
+  '...XXXXXX...',
+  '...XYYYYX...',
+  '...XXXXXX...'
+];
+const LOCK = [
+  '...XXXX...',
+  '..X....X..',
+  '..X....X..',
+  '..X....X..',
+  '.XXXXXXXX.',
+  '.XGGGGGGX.',
+  '.XGGXXGGX.',
+  '.XGGXXGGX.',
+  '.XGGGGGGX.',
+  '.XXXXXXXX.'
+];
+function pixelSVG(rows, pal, cls) {
+  const w = rows[0].length, h = rows.length; let s = '';
+  rows.forEach((row, y) => {
+    let x = 0;
+    while (x < w) {
+      const c = row[x];
+      if (c === '.') { x++; continue; }
+      let n = 1; while (x + n < w && row[x + n] === c) n++;
+      s += '<rect x="' + x + '" y="' + y + '" width="' + n + '" height="1" fill="' + (pal[c] || INK) + '"/>';
+      x += n;
+    }
+  });
+  return '<svg class="' + (cls || '') + '" viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges" aria-hidden="true">' + s + '</svg>';
+}
+function cloudRows(mood) {
+  const g = CLOUD.map(r => r.split(''));
+  (FACES[mood] || []).forEach(([x, y, c]) => { g[y][x] = c || 'E'; });
+  return g.map(r => r.join(''));
+}
+const cloudSVG = (mood, fill) => pixelSVG(cloudRows(mood || 'meh'), { X: INK, E: INK, P: '#ff8fb1', W: fill || '#fffaf0' });
+const TROPHY_SVG = pixelSVG(TROPHY, { X: INK, Y: '#ffc500' });
+const LOCK_SVG = pixelSVG(LOCK, { X: '#6f6c62', G: '#3b382f' });
+
+$('#brandIcon').innerHTML = cloudSVG('smug', '#ffc500');
+$('#avCloud').innerHTML = cloudSVG('smug');
+$('#avLaptop').innerHTML = pixelSVG(LAPTOP, { X: INK, S: '#21c6a9', E: INK, M: INK, K: '#ffc500' });
+
+/* drifting sky clouds */
+(() => {
+  const sky = $('#sky');
+  [[8, 70, -10], [26, 95, -55], [58, 80, -30], [80, 110, -75]].forEach(([top, dur, delay]) => {
+    const d = document.createElement('div');
+    d.innerHTML = cloudSVG('none', '#fffaf0');
+    const svg = d.firstChild;
+    svg.style.top = top + '%';
+    svg.style.animationDuration = dur + 's';
+    svg.style.animationDelay = delay + 's';
+    if (reduce) { svg.style.animation = 'none'; svg.style.left = (top * 1.1) + '%'; }
+    sky.appendChild(svg);
+  });
+})();
+
+/* ---------------- Sound ---------------- */
+let AC = null, soundOn = store.get('cc2.sound', false);
+function tone(f, d, type, vol, slide) {
+  if (!soundOn) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+    g.gain.setValueAtTime(vol || 0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + 0.03);
+  } catch (e) {}
+}
+const sfx = {
+  click: () => tone(660, 0.05),
+  good: () => { tone(660, 0.08); setTimeout(() => tone(990, 0.12), 80); },
+  bad: () => tone(240, 0.3, 'sawtooth', 0.05, -140),
+  win: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.12), i * 90)),
+  boom: () => tone(180, 0.7, 'sawtooth', 0.08, -150),
+  siren: () => { for (let i = 0; i < 4; i++) { setTimeout(() => tone(880, 0.15, 'square', 0.04), i * 300); setTimeout(() => tone(620, 0.15, 'square', 0.04), i * 300 + 150); } }
+};
+const soundBtn = $('#soundBtn');
+function renderSound() { soundBtn.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; soundBtn.setAttribute('aria-pressed', String(soundOn)); }
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn; store.set('cc2.sound', soundOn); renderSound();
+  if (soundOn) { sfx.win(); unlock('sound'); say('Bleeps enabled. Your coworkers will love this.', 'smug'); }
+});
+renderSound();
+
+/* ---------------- Confetti engine ---------------- */
+const fx = (() => {
+  const c = $('#fx'), ctx = c.getContext('2d');
+  let W = 0, H = 0, parts = [], running = false, last = 0;
+  function size() { const dpr = Math.min(2, window.devicePixelRatio || 1); W = innerWidth; H = innerHeight; c.width = W * dpr; c.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  size(); addEventListener('resize', size);
+  const PAL = {
+    classic: ['#ffc500', '#7700ff', '#21c6a9', '#fffaf0', '#ff5e24'],
+    pixel: ['#ffc500', '#7700ff', '#21c6a9', '#312f27'],
+    sad: ['#8d8a80', '#b1afa7', '#6f6c62'],
+    boom: ['#ff5e24', '#ffc500', '#1e1c17', '#a8320a']
+  };
+  function add(p) { parts.push(p); if (!running) { running = true; last = 0; requestAnimationFrame(tick); } }
+  function tick(t) {
+    const dt = last ? Math.min(0.033, (t - last) / 1000) : 0.016; last = t;
+    ctx.clearRect(0, 0, W, H);
+    parts = parts.filter(p => {
+      p.vy += p.g * dt; p.vx *= (1 - p.drag * dt); p.vy *= (1 - p.drag * dt);
+      p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; p.life -= dt;
+      if (p.life <= 0 || p.y > H + 60) return false;
+      ctx.save(); ctx.globalAlpha = Math.min(1, p.life * 1.6); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.color;
+      if (p.text) { ctx.font = '800 ' + p.size + 'px Gabarito, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(p.text, 0, 0); }
+      else ctx.fillRect(-p.size / 2, -p.size * p.aspect / 2, p.size, p.size * p.aspect);
+      ctx.restore(); return true;
+    });
+    if (parts.length) requestAnimationFrame(tick); else { running = false; ctx.clearRect(0, 0, W, H); }
+  }
+  function burst(x, y, o) {
+    o = o || {};
+    const n = Math.round((o.count || 120) * (reduce ? 0.3 : 1)), pal = o.colors || PAL.classic;
+    for (let i = 0; i < n; i++) {
+      const a = (o.angle != null ? o.angle : -Math.PI / 2) + (Math.random() - 0.5) * (o.spread || Math.PI * 1.1);
+      const sp = (o.power || 760) * (0.4 + Math.random() * 0.8);
+      add({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: o.g || 1150, drag: 1.5, r: Math.random() * 6, vr: (Math.random() - 0.5) * 14,
+        life: (o.life || 2.6) * (0.7 + Math.random() * 0.6), size: 6 + Math.random() * 7, aspect: o.square ? 1 : 0.45 + Math.random() * 0.6, color: pal[i % pal.length] });
+    }
+  }
+  function rain(o) {
+    o = o || {};
+    const n = Math.round((o.count || 160) * (reduce ? 0.3 : 1)), pal = o.colors || PAL.pixel;
+    for (let i = 0; i < n; i++) {
+      add({ x: Math.random() * W, y: -20 - Math.random() * H * 0.7, vx: (Math.random() - 0.5) * 40, vy: 60 + Math.random() * 120, g: o.g || 220, drag: 0.2,
+        r: o.words ? (Math.random() - 0.5) * 0.4 : 0, vr: 0, life: o.life || 5.5, size: o.words ? (o.size || 18) : (o.size || 8) + Math.floor(Math.random() * 3) * 4,
+        aspect: 1, color: pal[i % pal.length], text: o.words ? o.words[i % o.words.length] : null });
+    }
+  }
+  return { burst, rain, PAL };
+})();
+
+/* ---------------- Cranky ---------------- */
+const crankyBtn = $('#crankyBtn'), bubble = $('#bubble'), bubbleText = $('#bubbleText');
+let bubbleTimer = 0;
+function setMood(m) { crankyBtn.innerHTML = cloudSVG(m); }
+function restMood() { return cheat ? 'cool' : 'meh'; }
+function say(text, mood, ms) {
+  setMood(mood || 'smug');
+  bubbleText.textContent = text; bubble.hidden = false;
+  clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => { bubble.hidden = true; setMood(restMood()); }, ms || Math.max(5200, text.length * 62));
+}
+bubble.addEventListener('click', () => { bubble.hidden = true; setMood(restMood()); });
+const QUIPS = [
+  'I’m a cloud. I have no hard drive and no feelings. Only one of those is your problem.',
+  'Fun fact: “the cloud” is just someone else’s computer. Today, that someone is me. Hi.',
+  'Push your work. I’m not saying I’ll forget it. I’m saying I’m legally a goldfish.',
+  'You don’t need a Project. You need a repo and a little self-belief.',
+  'CLAUDE.md is a note to your future self that Claude actually reads. Unlike your other notes.',
+  'Network access set to Full is like leaving the front door open because keys are heavy.',
+  'Never paste keys in chat. I say this with love. And sirens.',
+  'A connector is a VIP pass. An allowlist is a guest list. Both beat climbing in the window.',
+  'Desktop sees your files. I see your repo. Neither of us sees your 47 open tabs. Mercifully.',
+  'Small tasks finish. Giant vague tasks become “a learning experience.”'
+];
+crankyBtn.addEventListener('click', () => { say(rand(QUIPS), 'smug'); sfx.click(); });
+setMood('meh');
+
+/* ---------------- Achievements ---------------- */
+const ACH = [
+  { id: 'start', name: 'Pressed Start', desc: 'Found the big violet button.', xp: 20 },
+  { id: 'answers', name: 'Skimmer', desc: 'Went straight for the answers.', xp: 10 },
+  { id: 'sound', name: 'Audiophile', desc: 'Turned on the bleeps.', xp: 5 },
+  { id: 'crank', name: 'Crank Enthusiast', desc: 'Turned the crank three full times.', xp: 30 },
+  { id: 'flow', name: 'Flow State', desc: 'Ran the “Do I need a Project?” flow.', xp: 40 },
+  { id: 'map', name: 'Cartographer', desc: 'Opened every branch of the storage map.', xp: 40 },
+  { id: 'pushed', name: 'Saved by the Push', desc: 'Pushed every file before the self-destruct.', xp: 60 },
+  { id: 'boom', name: 'Learned It the Hard Way', desc: 'Let the cloud computer eat your files.', xp: 10 },
+  { id: 'leak', name: 'Caught Red-Handed', desc: 'Tried to paste a secret into chat.', xp: 15 },
+  { id: 'wired', name: 'Database Whisperer', desc: 'Wired up a database the safe way.', xp: 50 },
+  { id: 'speedrun', name: 'Any% Setup', desc: 'Checked off all ten setup steps.', xp: 60 },
+  { id: 'fight', name: 'Ringside Seat', desc: 'Watched Web vs Desktop to the final bell.', xp: 30 },
+  { id: 'boss', name: 'Boss Slayer', desc: 'Scored 5 or more on the boss quiz.', xp: 80 },
+  { id: 'rebel', name: 'Rule Breaker', desc: 'Pressed Do Not Press ten times.', xp: 5 },
+  { id: 'cheat', name: 'Cheater', desc: 'Found the cheat code. Cranky is disappointed.', xp: 1 },
+  { id: 'confetti', name: 'Confetti Addict', desc: 'Fired confetti fifteen times.', xp: 15 }
+];
+const XP_MAX = ACH.reduce((s, a) => s + a.xp, 0);
+let got = new Set(store.get('cc2.ach', []));
+function xpTotal() { return ACH.filter(a => got.has(a.id)).reduce((s, a) => s + a.xp, 0); }
+function renderTrophies() {
+  $('#trophies').innerHTML = ACH.map(a => '<li class="tro' + (got.has(a.id) ? ' got' : '') + '">' + (got.has(a.id) ? TROPHY_SVG : LOCK_SVG) +
+    '<b>' + a.name + '</b><small>' + a.desc + '</small><span class="xpv">' + (got.has(a.id) ? 'UNLOCKED · ' : '') + '+' + a.xp + ' XP</span></li>').join('');
+}
+function renderXP() {
+  const xp = xpTotal();
+  $('#lvl').textContent = 'LV ' + (1 + Math.floor(xp / 100));
+  $('#xpFill').style.width = (xp % 100) + '%';
+  $('#xpNum').textContent = xp + ' XP';
+  $('#xpTotal').textContent = xp; $('#xpMax').textContent = XP_MAX;
+  renderTrophies();
+}
+function toast(a) {
+  const t = document.createElement('div'); t.className = 'toast';
+  t.innerHTML = TROPHY_SVG + '<small>ACHIEVEMENT UNLOCKED · +' + a.xp + ' XP</small><b></b>';
+  t.querySelector('b').textContent = a.name;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3800);
+}
+function unlock(id) {
+  if (got.has(id)) return;
+  const a = ACH.find(x => x.id === id); if (!a) return;
+  got.add(id); store.set('cc2.ach', Array.from(got)); renderXP(); toast(a); sfx.win();
+}
+renderXP();
+
+/* ---------------- Confetti buttons ---------------- */
+let confettiCount = 0;
+function fire(kind, el) {
+  confettiCount++;
+  if (confettiCount === 15) unlock('confetti');
+  const [x, y] = el ? center(el) : [innerWidth / 2, innerHeight * 0.6];
+  if (kind === 'classic') { fx.burst(x, y, { count: 150 }); sfx.good(); }
+  else if (kind === 'pixel') { fx.rain({ count: 220, colors: fx.PAL.pixel }); sfx.click(); }
+  else if (kind === 'words') { fx.rain({ count: 44, words: ['git push', 'LGTM', 'merged', 'ship it', '+1 XP', 'commit', 'PR #1'], colors: ['#7700ff', '#127866', '#1e1c17', '#a8320a'], size: 19, g: 150 }); sfx.good(); }
+  else if (kind === 'sad') { fx.rain({ count: 36, colors: fx.PAL.sad, g: 30, life: 8 }); sfx.bad(); say(rand(['Sad confetti. For when the build fails and so do you.', 'Grey confetti. The official color of Monday.', 'This is what forgetting to push feels like.']), 'meh'); return; }
+  if (confettiCount === 8) say('That’s eight confetti blasts. Shipping speed: zero. Vibes: immaculate.', 'smug');
+}
+$$('[data-fx]').forEach(b => b.addEventListener('click', () => fire(b.dataset.fx, b)));
+
+$('#pressStart').addEventListener('click', () => { unlock('start'); say('Level 1. It’s a flowchart. It has arrows. Try to keep up.', 'smug'); });
+$('#skipAnswers').addEventListener('click', () => { unlock('answers'); say('Straight to the answers. Efficient. Rude, but efficient.', 'smug'); });
+
+/* ---------------- Console screen + crank ---------------- */
+const scr = $('#screen'), sx = scr.getContext('2d');
+const SC = { bg: '#c8c5b6', ink: '#312f27', hi: '#eeebdf' };
+function sRect(x, y, w, h, c) { sx.fillStyle = c || SC.ink; sx.fillRect(Math.round(x), Math.round(y), w, h); }
+function sText(t, x, y, size) { sx.fillStyle = SC.ink; sx.font = (size || 14) + 'px "Jersey 10", monospace'; sx.textAlign = 'center'; sx.textBaseline = 'alphabetic'; sx.fillText(t, x, y); }
+function sCloud(x, y, s, mood) { cloudRows(mood).forEach((row, yy) => row.split('').forEach((c, xx) => { if (c !== '.') sRect(x + xx * s, y + yy * s, s, s, (c === 'W' || c === 'P') ? SC.hi : SC.ink); })); }
+function sLaptop(x, y) { sRect(x, y, 34, 22); sRect(x + 2, y + 2, 30, 18, SC.hi); sRect(x - 5, y + 22, 44, 4); sRect(x + 9, y + 7, 3, 3); sRect(x + 22, y + 7, 3, 3); sRect(x + 12, y + 14, 10, 2); }
+function sVault(x, y) { sRect(x, y, 52, 40); sRect(x + 2, y + 2, 48, 36, SC.hi); sRect(x + 2, y + 11, 48, 2); sText('REPO', x + 26, y + 32, 14); }
+const SCENES = [
+  t => { sText('CLOUD CARTRIDGE', 100, 28, 22); sCloud(70, 42 + Math.round(Math.sin(t * 3) * 3), 3, 'smug'); if (Math.floor(t * 2) % 2 === 0) sText('TURN THE CRANK', 100, 113, 13); },
+  t => { sLaptop(18, 64); sCloud(118, 8, 3, 'meh'); const k = (t % 1.6) / 1.6, x = (1 - k) * (1 - k) * 36 + 2 * (1 - k) * k * 80 + k * k * 146, y = (1 - k) * (1 - k) * 60 + 2 * (1 - k) * k * 4 + k * k * 36; sRect(x - 3, y - 3, 7, 7); sText('1  YOU ASK. IT RUNS UP HERE.', 100, 113, 12); },
+  t => { sCloud(12, 6, 3, 'happy'); sVault(132, 50); for (let i = 0; i < 3; i++) { const k = ((t + i * 0.53) % 1.6) / 1.6; sRect(64 + k * 92 - 3, 34 + k * k * 34 - 3, 7, 7); } sText('2  COMMIT + PUSH = SAVED', 100, 113, 12); },
+  t => {
+    const c = t % 3.4;
+    if (c < 1.8) { const j = c > 1.0 ? (Math.random() - 0.5) * 4 : 0; sRect(68 + j, 30, 64, 42); sRect(70 + j, 32, 60, 38, SC.hi); sText('CONTAINER', 100 + j, 56, 13); if (c > 1.0) sText('IDLE...', 100, 22, 12); }
+    else { const k = (c - 1.8) / 1.6; for (let i = 0; i < 28; i++) { const a = i * 2.39, r = k * 74 * (0.45 + ((i * 37) % 10) / 18); sRect(100 + Math.cos(a) * r, 51 + Math.sin(a) * r * 0.7, 4, 4); } if (k > 0.25) sText('POOF', 100, 58, 26); }
+    sText('3  UNPUSHED WORK = GONE', 100, 113, 12);
+  }
+];
+let scene = 0, sceneT = 0, lastCrankAt = -1e9, spin = 0, lastFrame = 0, screenVisible = true;
+const crank = $('#crank'), arm = $('#crankArm');
+function setScene(n) { scene = ((n % 4) + 4) % 4; sceneT = 0; crank.setAttribute('aria-valuenow', String(scene + 1)); crank.setAttribute('aria-valuetext', 'Screen ' + (scene + 1) + ' of 4'); }
+function drawScreen(ts) {
+  const dt = lastFrame ? Math.min(0.05, (ts - lastFrame) / 1000) : 0.016; lastFrame = ts;
+  spin *= 0.92;
+  if (screenVisible) {
+    if (!reduce) sceneT += dt * (1 + Math.min(4, spin));
+    if (!reduce && performance.now() - lastCrankAt > 8000 && sceneT > 5.2) setScene(scene + 1);
+    sx.fillStyle = SC.bg; sx.fillRect(0, 0, 200, 120);
+    SCENES[scene](reduce ? 0.9 : sceneT);
+  }
+  requestAnimationFrame(drawScreen);
+}
+requestAnimationFrame(drawScreen);
+if ('IntersectionObserver' in window) new IntersectionObserver(es => { screenVisible = es[0].isIntersecting; }).observe(scr);
+
+let crankAngle = -35, crankAcc = 0, revs = 0, dragging = false, prevA = 0;
+function angAt(e) { const r = crank.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; }
+function turn(d) {
+  crankAngle += d; arm.style.transform = 'rotate(' + crankAngle + 'deg)';
+  crankAcc += d; spin += Math.abs(d) / 30; lastCrankAt = performance.now();
+  while (Math.abs(crankAcc) >= 360) {
+    const dir = Math.sign(crankAcc); crankAcc -= dir * 360; setScene(scene + dir); revs++; tone(440 + scene * 110, 0.06);
+    if (revs === 1) say('Yes, it has a crank. No, the crank does nothing useful. Neither do most meetings.', 'smug');
+    if (revs === 3) unlock('crank');
+  }
+}
+crank.addEventListener('pointerdown', e => { dragging = true; prevA = angAt(e); crank.setPointerCapture(e.pointerId); e.preventDefault(); });
+crank.addEventListener('pointermove', e => { if (!dragging) return; const a = angAt(e); let d = a - prevA; if (d > 180) d -= 360; if (d < -180) d += 360; prevA = a; turn(d); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => crank.addEventListener(t, () => { dragging = false; }));
+crank.addEventListener('wheel', e => { e.preventDefault(); turn(Math.max(-60, Math.min(60, e.deltaY * 0.6))); }, { passive: false });
+crank.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { turn(60); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { turn(-60); e.preventDefault(); }
+});
+$('#btnA').addEventListener('click', e => fire('classic', e.currentTarget));
+$('#btnB').addEventListener('click', () => { say(rand(QUIPS), 'smug'); sfx.click(); });
+$$('.dpad [data-d]').forEach(b => b.addEventListener('click', () => {
+  const d = b.dataset.d; lastCrankAt = performance.now();
+  if (d === 'left') { setScene(scene - 1); sfx.click(); }
+  if (d === 'right') { setScene(scene + 1); sfx.click(); }
+  if (d === 'up') fire('words', b);
+  if (d === 'down') fire('sad', b);
+}));
+
+/* ---------------- Level 1: flow ---------------- */
+let flowRoute = 'yes', flowBusy = false;
+$$('[data-route]').forEach(b => b.addEventListener('click', () => {
+  flowRoute = b.dataset.route;
+  $$('[data-route]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); sfx.click();
+}));
+const FLOW = {
+  yes: ['A', 'w-A-Q1', 'Q1', 'w-Q1-S1', 'S1', 'w-S1-Q2', 'Q2', 'w-Q2-S2', 'S2', 'w-S2-E', 'E'],
+  no: ['A', 'w-A-Q1', 'Q1', 'w-Q1-N1', 'N1', 'w-N1-S1', 'S1', 'w-S1-Q2', 'Q2', 'w-Q2-S2', 'S2', 'w-S2-E', 'E']
+};
+const FMSG = {
+  A: 'Start: you want Claude writing code on Anthropic’s computers.',
+  Q1yes: 'You have a GitHub repo. Good. That’s where your project lives.',
+  Q1no: 'No repo yet? No problem.',
+  N1: 'Make an empty repo on github.com. Name it anything. Two minutes.',
+  S1: 'Open claude.ai/code and connect GitHub. You only do this once.',
+  Q2: 'Need a Project? Nope. Chat Projects are a separate claude.ai feature.',
+  S2: 'Pick the repo, pick an environment, type what you want.',
+  E: 'Claude codes, pushes a branch, and opens a pull request. Flow complete.'
+};
+const token = $('#token'), fstatus = $('#flowStatus');
+function moveAlong(path) {
+  return new Promise(res => {
+    const L = path.getTotalLength();
+    if (reduce) { const p = path.getPointAtLength(L); token.setAttribute('transform', 'translate(' + p.x + ' ' + p.y + ')'); return res(); }
+    const dur = Math.max(380, L / 260 * 1000), t0 = performance.now();
+    (function step(now) {
+      const k = Math.min(1, (now - t0) / dur), p = path.getPointAtLength(L * k);
+      token.setAttribute('transform', 'translate(' + p.x + ' ' + p.y + ')');
+      if (k < 1) requestAnimationFrame(step); else res();
+    })(t0);
+  });
+}
+$('#runFlow').addEventListener('click', async () => {
+  if (flowBusy) return; flowBusy = true; $('#runFlow').disabled = true;
+  $$('#flow .lit, #flow .hint').forEach(e => e.classList.remove('lit', 'hint'));
+  token.style.opacity = 1; token.setAttribute('transform', 'translate(95 190)');
+  for (const id of FLOW[flowRoute]) {
+    if (id.indexOf('w-') === 0) { const w = document.getElementById(id); w.classList.add('lit'); await moveAlong(w); }
+    else {
+      document.getElementById('f-' + id).classList.add('lit'); sfx.click();
+      fstatus.textContent = FMSG[id === 'Q1' ? 'Q1' + flowRoute : id];
+      if (id === 'Q2') { $('#f-P').classList.add('hint'); $('#w-Q2-P').classList.add('lit'); }
+      await sleep(reduce ? 300 : 900);
+    }
+  }
+  const [ex, ey] = center($('#f-E')); fx.burst(ex, ey, { count: 90 }); sfx.good();
+  unlock('flow');
+  say(flowRoute === 'no' ? 'See? No repo, no problem. Two minutes and you’re in. Faster than your last “quick sync.”' : 'Flowchart complete. You followed arrows. Some people can’t. I’m proud of you. Slightly.', 'happy');
+  flowBusy = false; $('#runFlow').disabled = false;
+});
+
+/* ---------------- Level 2: mind map ---------------- */
+const SCOL = { PERMANENT: '#21c6a9', SAVED: '#7700ff', TEMPORARY: '#ff5e24', 'CHAT ONLY': '#b1afa7' };
+const MM = [
+  { id: 'repo', t: 'GitHub repo', s: 'PERMANENT', x: 175, y: 95, ly: 30, leaves: ['CLAUDE.md', 'docs/ folder'],
+    where: 'github.com, in your repository.', lasts: 'Until you delete it.',
+    what: 'Your code, your CLAUDE.md house rules, and a docs/ folder of reference files. This is Claude Code’s version of “knowledge files.”',
+    tip: 'Every session starts from a fresh copy of the repo. Anything Claude should know belongs here.' },
+  { id: 'box', t: 'Session computer', s: 'TEMPORARY', x: 725, y: 95, ly: 30, leaves: ['unpushed edits', 'installed tools'],
+    where: 'A temporary cloud computer Anthropic starts for each session.', lasts: 'Until the session sits idle for a while or ends.',
+    what: 'Edits Claude hasn’t pushed yet, tools it installed, and files it downloaded.',
+    tip: 'Say “commit and push” before you walk away. Anything not pushed can disappear.' },
+  { id: 'env', t: 'Environment', s: 'SAVED', x: 120, y: 280, ly: 350, leaves: ['API keys', 'network rules'],
+    where: 'Your claude.ai account: the environment menu (cloud icon), then Edit.', lasts: 'Reused by every session that picks this environment.',
+    what: 'Network access rules, allowed domains, environment variables, API credentials, and an optional setup script.',
+    tip: 'Changes apply to new sessions. Start a fresh session after you edit it.' },
+  { id: 'conn', t: 'Connectors', s: 'SAVED', x: 780, y: 280, ly: 350, leaves: ['Supabase', 'Gmail, Drive'],
+    where: 'claude.ai/customize/connectors', lasts: 'Stay connected to your account.',
+    what: 'Live links to services like Supabase, Google Drive, Gmail, and Refero. They don’t need a network allowlist.',
+    tip: 'Sessions load connectors when they start. Added one mid-session? Open a new session.' },
+  { id: 'hist', t: 'Session history', s: 'SAVED', x: 175, y: 465, ly: 530, leaves: ['transcript', 'branch + PR'],
+    where: 'Your session list at claude.ai/code.', lasts: 'Until you archive or delete it.',
+    what: 'The conversation, plus the branch and pull request it produced.',
+    tip: 'Reopen an old session to pick up the thread. Its computer starts fresh from the repo.' },
+  { id: 'chat', t: 'Chat Project files', s: 'CHAT ONLY', x: 725, y: 465, ly: 530, leaves: ['uploaded PDFs', 'instructions'],
+    where: 'claude.ai chat, inside a Project, on Anthropic’s servers.', lasts: 'As long as the Project exists.',
+    what: 'PDFs and docs you uploaded for regular Claude chats, plus that Project’s custom instructions.',
+    tip: 'Don’t count on Claude Code seeing these. Copy what matters into your repo’s docs/ folder.' }
+];
+(() => {
+  const svg = $('#mindmap'); let s = '';
+  MM.forEach((n, i) => {
+    const dir = Math.sign(n.x - 450), sxp = 450 + dir * 90, syp = 280 + Math.sign(n.y - 280) * 22, ex = n.x - dir * 95, mx = (sxp + ex) / 2;
+    s += '<path class="mm-branch" pathLength="100" style="animation-delay:' + (i * 0.12) + 's" d="M' + sxp + ' ' + syp + ' C' + mx + ' ' + syp + ', ' + mx + ' ' + n.y + ', ' + ex + ' ' + n.y + '"/>';
+  });
+  MM.forEach((n, i) => {
+    const top = n.ly < n.y;
+    n.leaves.forEach((lf, j) => {
+      const lx = n.x + (j ? 65 : -65), w = lf.length * 7.4 + 20, d = (0.9 + i * 0.1 + j * 0.08) + 's';
+      const y1 = top ? n.y - 32 : n.y + 32, y2 = top ? n.ly + 12 : n.ly - 12;
+      s += '<line class="mm-leafline" style="--d:' + d + '" x1="' + lx + '" y1="' + y1 + '" x2="' + lx + '" y2="' + y2 + '"/>';
+      s += '<g class="mm-leaf" style="--d:' + d + '"><rect x="' + (lx - w / 2) + '" y="' + (n.ly - 12) + '" width="' + w + '" height="24" rx="3"/><text x="' + lx + '" y="' + (n.ly + 5) + '">' + lf + '</text></g>';
+    });
+  });
+  s += '<g class="mm-center"><rect x="360" y="245" width="180" height="70"/><text x="450" y="292">YOUR STUFF</text></g>';
+  MM.forEach(n => {
+    const light = n.s === 'SAVED', tc = light ? '#ffffff' : INK;
+    s += '<g class="mm-node" tabindex="0" role="button" data-id="' + n.id + '" aria-label="' + n.t + ', ' + n.s.toLowerCase() + '">' +
+      '<rect x="' + (n.x - 95) + '" y="' + (n.y - 32) + '" width="190" height="64" fill="' + SCOL[n.s] + '"/>' +
+      '<text class="t" x="' + n.x + '" y="' + (n.y - 3) + '" fill="' + tc + '">' + n.t + '</text>' +
+      '<text class="b" x="' + n.x + '" y="' + (n.y + 18) + '" fill="' + tc + '">' + n.s + '</text></g>';
+  });
+  svg.innerHTML = s;
+})();
+const opened = new Set();
+function showNode(id, quiet) {
+  const n = MM.find(x => x.id === id); if (!n) return;
+  $$('#mindmap .mm-node').forEach(g => g.classList.toggle('sel', g.dataset.id === id));
+  const b = $('#mmBadge'); b.textContent = n.s; b.style.background = SCOL[n.s]; b.style.color = n.s === 'SAVED' ? '#fff' : INK;
+  $('#mmTitle').textContent = n.t; $('#mmWhere').textContent = n.where; $('#mmLasts').textContent = n.lasts; $('#mmWhat').textContent = n.what; $('#mmTip').textContent = n.tip;
+  if (quiet) return;
+  opened.add(id); sfx.click();
+  if (id === 'box') say('That one’s me. Temporary. Like a gym membership in February.', 'meh');
+  if (opened.size === MM.length) { unlock('map'); say('All six branches. You now know more about cloud storage than most people who say “the cloud.”', 'happy'); }
+}
+$$('#mindmap .mm-node').forEach(g => {
+  g.addEventListener('click', () => showNode(g.dataset.id));
+  g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showNode(g.dataset.id); } });
+});
+showNode('repo', true);
+if ('IntersectionObserver' in window && !reduce) {
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting) { $('#mapfig').classList.add('play'); io.disconnect(); } }, { threshold: 0.35 });
+  io.observe($('#mapfig'));
+}
+
+/* ---------------- Level 3: self-destruct game ---------------- */
+const G = { files: [], t: 0, run: false, raf: 0, dur: 14, committedOnce: false,
+  sched: [{ n: 'app.js', at: 0.6 }, { n: 'notes.md', at: 1.8 }, { n: 'signup.html', at: 3.0 }] };
+function gRender() {
+  const local = G.files.filter(f => f.st !== 'pushed'), pushed = G.files.filter(f => f.st === 'pushed');
+  $('#gFiles').innerHTML = local.length ? local.map(f => '<li class="file' + (f.lost ? ' lost' : '') + '"><span>' + f.n + '</span><span class="st st--' + f.st + '">' + (f.lost ? 'lost' : f.st) + '</span></li>').join('')
+    : '<li class="empty">' + (G.run ? 'Claude is writing files…' : 'Press Start. Claude will write three files here.') + '</li>';
+  $('#gVault').innerHTML = pushed.length ? pushed.map(f => '<li class="file"><span>' + f.n + '</span><span class="st st--pushed">saved</span></li>').join('')
+    : '<li class="empty">Nothing yet. Files only arrive when you push.</li>';
+  $('#gCommit').disabled = !G.run || !G.files.some(f => f.st === 'unsaved');
+  $('#gPush').disabled = !G.run || !G.files.some(f => f.st === 'committed');
+  $('#gSnack').disabled = !G.run;
+}
+function gTimer() {
+  const left = Math.max(0, G.dur - G.t);
+  $('#gTime').textContent = '00:' + String(Math.ceil(left)).padStart(2, '0');
+  $('#gBar').style.width = (left / G.dur * 100) + '%';
+  $('#gBarWrap').classList.toggle('low', left < 5);
+}
+function gEnd(win) {
+  G.run = false; cancelAnimationFrame(G.raf);
+  const r = $('#gResult'); r.hidden = false;
+  if (win) {
+    const left = Math.max(0, G.dur - G.t).toFixed(1);
+    r.className = 'result result--win';
+    r.textContent = 'Saved. All three files are in GitHub with ' + left + ' seconds to spare. The cloud computer can vanish now. Nothing is lost.';
+    const [x, y] = center($('#gVaultPanel')); fx.burst(x, y, { count: 170 }); unlock('pushed');
+    say('Pushed with ' + left + ' seconds to spare. Your files live in GitHub now, which, unlike me, does not evaporate.', 'happy');
+  } else {
+    G.files.forEach(f => { if (f.st !== 'pushed') f.lost = true; });
+    const lost = G.files.filter(f => f.lost).length;
+    r.className = 'result result--lose';
+    r.textContent = lost ? 'Cloud computer reclaimed. ' + lost + ' unpushed file' + (lost === 1 ? '' : 's') + ' gone for good. Commit saves on the cloud computer. Push saves to GitHub. Only push survives.'
+      : 'You left before Claude wrote anything. Nothing lost, nothing gained. Very zen.';
+    $('#gBox').classList.remove('boom'); void $('#gBox').offsetWidth; $('#gBox').classList.add('boom');
+    const [x, y] = center($('#gBox')); fx.burst(x, y, { count: 150, colors: fx.PAL.boom, power: 900, square: true, spread: Math.PI * 2 });
+    sfx.boom(); unlock('boom');
+    say(lost ? 'Kaboom. Pour one out for notes.md. Next time: commit, then push.' : 'You went for a snack before the work started. Honestly? Relatable.', 'shock');
+  }
+  gRender(); gTimer(); $('#gStart').textContent = 'Play again';
+}
+$('#gStart').addEventListener('click', () => {
+  cancelAnimationFrame(G.raf); G.files = []; G.t = 0; G.run = true; G.committedOnce = false;
+  $('#gResult').hidden = true; $('#gBox').classList.remove('boom'); $('#gStart').textContent = 'Restart';
+  let last = performance.now();
+  const loop = now => {
+    if (!G.run) return;
+    G.t += (now - last) / 1000; last = now;
+    G.sched.forEach(s => { if (G.t >= s.at && !G.files.find(f => f.n === s.n)) { G.files.push({ n: s.n, st: 'unsaved' }); tone(520, 0.04); gRender(); } });
+    gTimer();
+    if (G.t >= G.dur) { gEnd(false); return; }
+    G.raf = requestAnimationFrame(loop);
+  };
+  gRender(); gTimer(); G.raf = requestAnimationFrame(loop);
+  say('Clock’s ticking. At zero, this cloud computer gets reclaimed. Commit, then push. I believe in you. Barely.', 'smug');
+});
+$('#gCommit').addEventListener('click', () => {
+  G.files.forEach(f => { if (f.st === 'unsaved') f.st = 'committed'; }); sfx.click(); gRender();
+  if (!G.committedOnce) { G.committedOnce = true; say('Committed. That saves it on the cloud computer only. Which is, as we discussed, temporary. Now push.', 'smug'); }
+});
+$('#gPush').addEventListener('click', () => {
+  G.files.forEach(f => { if (f.st === 'committed') f.st = 'pushed'; }); sfx.good(); gRender();
+  if (G.files.length === G.sched.length && G.files.every(f => f.st === 'pushed')) gEnd(true);
+});
+$('#gSnack').addEventListener('click', () => { if (G.run) { say('Snack break. The cloud computer did not wait for you. It never does.', 'meh'); G.t = G.dur; } });
+gRender(); gTimer();
+
+/* ---------------- Level 4: database wiring ---------------- */
+const ROUTES = {
+  A: { gate: ['Connector', 'via Anthropic'], steps: [
+    { t: 'Add the connector', d: 'Go to <span class="kbd">claude.ai/customize/connectors</span> and add Supabase, or another service that offers one.' },
+    { t: 'Sign in and approve', d: 'Log in to the service and choose what Claude may touch. Pick the smallest access that works.' },
+    { t: 'Start a new session', d: 'Connectors load when a session starts. Traffic goes through Anthropic, so no allowlist needed.' }
+  ] },
+  B: { gate: ['Allowlist + key', 'environment settings'], steps: [
+    { t: 'Copy a key from the service', d: 'Find the API keys page in your Supabase or Pinecone dashboard. Use the least powerful key that works.' },
+    { t: 'Store it in the environment', d: 'Environment menu, then Edit, then API credentials. Or an environment variable such as <span class="kbd">SUPABASE_URL</span> or <span class="kbd">PINECONE_API_KEY</span>.' },
+    { t: 'Allow the domain', d: 'Network access, then Custom. Add <span class="kbd">*.supabase.co</span> or <span class="kbd">*.pinecone.io</span>. Keep the default package-manager list.' },
+    { t: 'Start a new session', d: 'The new session picks up the key and the network rule.' }
+  ] }
+};
+let route = 'A', wiredOn = new Set(), wiredDone = { A: false, B: false };
+function updateWire() {
+  const n = ROUTES[route].steps.length, p = wiredOn.size / n;
+  $('#cab1').style.setProperty('--p', Math.min(1, p * 2));
+  $('#cab2').style.setProperty('--p', Math.max(0, p * 2 - 1));
+  $('#wSess').classList.toggle('on', p > 0);
+  $('#wGate').classList.toggle('on', p >= 0.5);
+  $('#wDb').classList.toggle('on', p === 1);
+  ['#cab1', '#cab2'].forEach(c => $(c).classList.toggle('flow', p === 1));
+  $('#wireStatus').textContent = p === 1 ? 'Connected. Data now flows to a database that remembers everything.' : wiredOn.size + ' of ' + n + ' steps done.';
+  if (p === 1 && !wiredDone[route]) {
+    wiredDone[route] = true; const [x, y] = center($('#wDb')); fx.burst(x, y, { count: 120 }); unlock('wired');
+    say(route === 'A' ? 'Connected, and you never touched a password. Your data lives somewhere that remembers, unlike me.' : 'Key hidden, gate opened, new session started. That’s the grown-up way. I’m almost impressed.', 'happy');
+  }
+}
+function renderRoute() {
+  const R = ROUTES[route];
+  $('#gateName').textContent = R.gate[0]; $('#gateSub').textContent = R.gate[1];
+  $('#steps').innerHTML = R.steps.map((s, i) => '<li class="step"><button class="switch" type="button" role="switch" aria-checked="' + wiredOn.has(i) + '" data-i="' + i + '" aria-label="Step ' + (i + 1) + ': ' + s.t + '"></button><div><strong>' + (i + 1) + '. ' + s.t + '</strong><p>' + s.d + '</p></div></li>').join('');
+  updateWire();
+}
+$('#steps').addEventListener('click', e => {
+  const b = e.target.closest('.switch'); if (!b) return;
+  const i = +b.dataset.i; if (wiredOn.has(i)) wiredOn.delete(i); else wiredOn.add(i);
+  b.setAttribute('aria-checked', String(wiredOn.has(i))); sfx.click(); updateWire();
+});
+$$('[data-rt]').forEach(b => b.addEventListener('click', () => {
+  route = b.dataset.rt; wiredOn = new Set();
+  $$('[data-rt]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); sfx.click(); renderRoute();
+}));
+renderRoute();
+
+const LEAK = /(sk-[A-Za-z0-9_-]{6,}|sk_(live|test)_|pk_(live|test)_|eyJ[A-Za-z0-9_-]{12,}|Bearer\s+\S{8,}|mcp-[A-Za-z0-9]{6,}|ghp_[A-Za-z0-9]{10,}|github_pat_|xox[abpr]-|AKIA[0-9A-Z]{12,}|pcsk_[A-Za-z0-9]|-----BEGIN|[A-Za-z0-9_\-]{40,})/;
+function checkLeak() {
+  const v = $('#leakInput').value.trim(), out = $('#leakOut');
+  if (!v) { out.className = 'leak-out'; out.textContent = 'You sent nothing. Bold. Minimalist. Unhelpful.'; return; }
+  if (LEAK.test(v)) {
+    out.className = 'leak-out bad';
+    out.textContent = 'Blocked: that looks like a secret key. Keys go in Environment, then Edit, then API credentials. If a real key ever lands in a chat, rotate it in the service’s dashboard.';
+    const s = $('#siren'); s.classList.remove('on'); void s.offsetWidth; s.classList.add('on');
+    sfx.siren(); unlock('leak');
+    say('WHOA. A secret key. In a chat box. That’s how keys end up in screenshots, logs, and my nightmares.', 'shock', 8000);
+  } else {
+    out.className = 'leak-out good';
+    out.textContent = 'Clean. No secrets detected. Claude would happily get to work on that.';
+    say('A normal request with zero secrets in it. Look at you, being a professional.', 'happy');
+  }
+}
+$('#leakSend').addEventListener('click', checkLeak);
+$('#leakBait').addEventListener('click', () => { $('#leakInput').value = 'Here is my key, go wild: sk-live-9fJ2kQ7xT4mW8zR1bN6vC3pL'; checkLeak(); });
+
+/* ---------------- Level 5: speedrun + loop ---------------- */
+const STEPS = [
+  ['Open claude.ai/code and sign in.', 'You need a paid plan: Pro, Max, Team, or Enterprise.'],
+  ['Connect GitHub.', 'Click Connect. Approve the Claude GitHub App. Choose which repos it may see.'],
+  ['Pick a repo.', 'That repo is your project folder. No repo yet? Make an empty one on github.com first.'],
+  ['Pick an environment.', 'Click the cloud icon. The standard setup is fine to start. Give it a name you’ll recognize.'],
+  ['Add secrets the safe way.', 'Environment menu, then Edit, then API credentials or environment variables. Never in chat.'],
+  ['Open the gate for outside services.', 'Add a connector, or set Network access to Custom and list the domain, like <span class="kbd">*.supabase.co</span>.'],
+  ['Add a CLAUDE.md to your repo.', 'Your house rules: what the project is, how to test it, what never to touch. Claude reads it every session.'],
+  ['Type your request in plain English.', 'Be specific: “Add a signup page that saves emails to Supabase. Write a test for it.”'],
+  ['Review the pull request.', 'Claude pushes its work to a branch. Open the pull request on GitHub, read it, then merge.'],
+  ['Before you leave: commit and push.', 'Say it every time. The cloud computer is temporary. GitHub is forever.']
+];
+let checks = new Set(store.get('cc2.checks', [])), runStart = null, runRaf = 0, splits = {};
+const fmt = ms => { const t = Math.max(0, ms), m = Math.floor(t / 60000), s = Math.floor(t / 1000) % 60, cs = Math.floor(t / 10) % 100; return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') + '.' + String(cs).padStart(2, '0'); };
+function renderChecks() {
+  $('#checklist').innerHTML = STEPS.map((s, i) => '<li><button class="check" type="button" data-i="' + i + '" aria-pressed="' + checks.has(i) + '"><span class="num">' + String(i + 1).padStart(2, '0') + '</span><span><strong>' + s[0] + '</strong><span class="sub">' + s[1] + '</span></span><span class="split">' + (splits[i] != null ? fmt(splits[i]) : '') + '</span></button></li>').join('');
+  $('#clockCount').textContent = checks.size + ' / 10 steps';
+}
+function tickClock() { if (runStart == null) return; $('#clockTime').textContent = fmt(performance.now() - runStart); runRaf = requestAnimationFrame(tickClock); }
+$('#checklist').addEventListener('click', e => {
+  const b = e.target.closest('.check'); if (!b) return;
+  const i = +b.dataset.i;
+  if (checks.has(i)) { checks.delete(i); delete splits[i]; }
+  else {
+    checks.add(i);
+    if (runStart == null && checks.size < 10) { runStart = performance.now(); tickClock(); $('#clockNote').textContent = 'Clock running. No pressure. (Some pressure.)'; }
+    if (runStart != null) splits[i] = performance.now() - runStart;
+  }
+  store.set('cc2.checks', Array.from(checks)); sfx.click(); renderChecks();
+  if (checks.size === 10) {
+    const total = runStart != null ? performance.now() - runStart : null;
+    cancelAnimationFrame(runRaf); runStart = null;
+    if (total != null) $('#clockTime').textContent = fmt(total);
+    $('#clockNote').textContent = total != null ? 'Final time ' + fmt(total) + '. New personal best, probably.' : 'All ten done. You’re set up.';
+    fx.rain({ count: 200, colors: fx.PAL.classic }); unlock('speedrun');
+    say(total != null && total < 20000 ? 'Under twenty seconds. You did not actually do those steps. I can tell. Do them for real later.' : 'All ten steps. You’re officially set up. Go build something. Push it. Then push it again.', 'happy');
+  }
+});
+$('#runReset').addEventListener('click', () => {
+  checks = new Set(); splits = {}; runStart = null; cancelAnimationFrame(runRaf);
+  store.set('cc2.checks', []); $('#clockTime').textContent = '00:00.00'; $('#clockNote').textContent = 'Tap step 1 to start the clock.'; renderChecks(); sfx.click();
+});
+renderChecks();
+if (checks.size === 10) $('#clockNote').textContent = 'All ten done on an earlier visit. Reset to run it again.';
+
+(() => {
+  const svg = $('#loopSvg'), cx = 300, cy = 205, R = 135;
+  const LBL = [['You ask', 'in plain English'], ['Claude works', 'in the cloud'], ['It pushes', 'a branch'], ['A pull request', 'opens'], ['You review', 'and merge']];
+  let s = '<circle class="ring" cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>';
+  s += '<text class="loop-title" x="' + cx + '" y="' + (cy + 4) + '">THE DAILY LOOP</text><text class="loop-sub" x="' + cx + '" y="' + (cy + 28) + '">REPEAT UNTIL RICH</text>';
+  LBL.forEach((l, i) => {
+    const a = (-90 + i * 72) * Math.PI / 180, x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R, c = Math.cos(a);
+    let tx = x, ty = y, anchor = 'middle';
+    if (c > 0.3) { tx = x + 24; anchor = 'start'; ty = y - 4; } else if (c < -0.3) { tx = x - 24; anchor = 'end'; ty = y - 4; } else { ty = y - 44; }
+    s += '<g class="station" data-i="' + i + '"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="13"/><text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="' + anchor + '"><tspan x="' + tx.toFixed(1) + '">' + l[0] + '</tspan><tspan x="' + tx.toFixed(1) + '" dy="19" style="font-weight:500">' + l[1] + '</tspan></text></g>';
+  });
+  s += '<rect id="orbit" x="-9" y="-9" width="18" height="18" fill="#ffc500" stroke="#1e1c17" stroke-width="3"/>';
+  svg.innerHTML = s;
+  const orbit = $('#orbit'), st = $$('.station', svg);
+  function place(deg) {
+    const a = (deg - 90) * Math.PI / 180;
+    orbit.setAttribute('transform', 'translate(' + (cx + Math.cos(a) * R).toFixed(1) + ' ' + (cy + Math.sin(a) * R).toFixed(1) + ') rotate(' + (deg * 2).toFixed(0) + ')');
+    st.forEach((g, i) => { const dd = Math.abs((((deg - i * 72) % 360) + 540) % 360 - 180); g.classList.toggle('on', dd < 20); });
+  }
+  if (reduce) { place(0); return; }
+  (function spinLoop(t) { place((t / 1000 * 30) % 360); requestAnimationFrame(spinLoop); })(0);
+})();
+
+/* ---------------- Level 6: fight ---------------- */
+const STATS = [['Works while you sleep', 10, 2], ['Sees your local files', 1, 10], ['Phone-friendly', 9, 5], ['Reaches localhost', 0, 10], ['Runs tasks in parallel', 9, 7], ['Sarcasm resistance', 3, 3]];
+function statsHTML(k) { return STATS.map(s => '<div class="stat"><span>' + s[0] + '</span><span class="pips" aria-hidden="true">' + Array.from({ length: 10 }, (_, i) => '<i' + (i < s[k] ? ' class="f"' : '') + '></i>').join('') + '</span><b>' + s[k] + '</b></div>').join(''); }
+$('#statsCloud').innerHTML = statsHTML(1); $('#statsLaptop').innerHTML = statsHTML(2);
+const ROUNDS = [
+  { t: 'Close your laptop lid', w: 'cloud', d: 'Web keeps running on Anthropic’s computers. Desktop pauses when your computer sleeps.' },
+  { t: 'Edit a file in your Downloads folder', w: 'laptop', d: 'Desktop can open folders on your computer. The cloud only sees your GitHub repo.' },
+  { t: 'Check progress from your phone', w: 'cloud', d: 'Open the session in the Claude app. Desktop needs Remote Control and a computer that’s awake.' },
+  { t: 'Talk to a database on localhost', w: 'laptop', d: '“Localhost” means your own computer. The cloud can’t see it.' },
+  { t: 'Run five tasks at once', w: 'tie', d: 'Both can. The cloud gives each task its own computer. Desktop uses separate worktrees on yours.' },
+  { t: 'Keep a secret key safe', w: 'tie', d: 'Web: environment settings. Desktop: a local .env file you never commit. Chat: never.' }
+];
+let fighting = false;
+function setHP(id, v) { const el = $('#' + id); el.querySelector('i').style.width = v + '%'; el.classList.toggle('low', v <= 40); $('#' + id + 'N').textContent = v; }
+$('#fightBtn').addEventListener('click', async () => {
+  if (fighting) return; fighting = true; $('#fightBtn').disabled = true;
+  let hc = 100, hl = 100; setHP('hpCloud', hc); setHP('hpLaptop', hl);
+  $('#fightLog').innerHTML = ''; $('#ko').hidden = true;
+  say('Two fighters enter. Nobody is getting hurt. These are software products. Calm down.', 'smug');
+  for (let i = 0; i < ROUNDS.length; i++) {
+    await sleep(reduce ? 150 : 1150);
+    const r = ROUNDS[i];
+    if (r.w === 'cloud') { hl -= 25; $('#fLaptop').classList.remove('hit'); void $('#fLaptop').offsetWidth; $('#fLaptop').classList.add('hit'); sfx.good(); }
+    else if (r.w === 'laptop') { hc -= 25; $('#fCloud').classList.remove('hit'); void $('#fCloud').offsetWidth; $('#fCloud').classList.add('hit'); sfx.good(); }
+    else { hc -= 10; hl -= 10; sfx.click(); }
+    setHP('hpCloud', hc); setHP('hpLaptop', hl);
+    const li = document.createElement('li'); li.className = 'round';
+    const label = r.w === 'cloud' ? 'CLOUD WINS' : r.w === 'laptop' ? 'LAPTOP WINS' : 'TIE';
+    li.innerHTML = '<span class="rn">R' + (i + 1) + '</span><div><strong></strong><p></p></div><span class="w w--' + r.w + '">' + label + '</span>';
+    li.querySelector('strong').textContent = r.t; li.querySelector('p').textContent = r.d;
+    $('#fightLog').appendChild(li);
+  }
+  await sleep(reduce ? 150 : 700);
+  $('#ko').hidden = false; fx.rain({ count: 160, colors: fx.PAL.classic }); sfx.win(); unlock('fight');
+  say('A tie. Like every “which tool is better” debate, the answer is “both, for different jobs.” Riveting.', 'meh');
+  fighting = false; $('#fightBtn').disabled = false; $('#fightBtn').textContent = 'Rematch';
+});
+
+/* ---------------- Boss quiz ---------------- */
+const QUIZ = [
+  { q: 'Do you need to create a Project to use Claude Code on the web?', o: ['Yes, always. Paperwork is love.', 'No. A GitHub repo and an environment are enough.', 'Only on Tuesdays.'], a: 1,
+    r: ['Projects are optional. You just invented paperwork.', 'Correct. Repo, environment, go.', 'Nothing is a Tuesday thing. Except tacos.'] },
+  { q: 'A session sits idle for a long time with unpushed changes. What happens?', o: ['They’re saved forever, obviously.', 'Cranky emails them to you.', 'The cloud computer is reclaimed. Unpushed changes are lost.'], a: 2,
+    r: ['Bold. Wrong, but bold. Replay Level 3.', 'I don’t have email. I barely have a shape.', 'Correct. Push before you walk away.'] },
+  { q: 'Where should your Supabase or Pinecone API key go?', o: ['Environment settings: API credentials or an environment variable.', 'Paste it in the chat so Claude has it.', 'A sticky note on your monitor.'], a: 0,
+    r: ['Correct. Hidden, saved, and out of the transcript.', 'The Leak Detector just fainted.', 'Analog. Respect. Still wrong.'] },
+  { q: 'Claude can’t reach api.pinecone.io from the cloud. What’s the fix?', o: ['Ask again, in all caps.', 'Restart your Wi-Fi router.', 'Network access, then Custom, then add *.pinecone.io. Or use a connector.'], a: 2,
+    r: ['Caps lock is not a network setting.', 'Your router is not invited to this cloud.', 'Correct. Open the gate for that one domain.'] },
+  { q: 'You added a connector in the middle of a session. Why can’t Claude see it?', o: ['Connectors load when a session starts. Open a new one.', 'The connector is broken. Throw the laptop.', 'Mercury is in retrograde.'], a: 0,
+    r: ['Correct. New session, new connectors.', 'Please don’t throw the laptop. It’s in Level 6.', 'Mercury has no say in this.'] },
+  { q: 'Which one keeps working after you close your laptop?', o: ['Claude Code Desktop.', 'Claude Code on the web.', 'Neither. Laptops are load-bearing.'], a: 1,
+    r: ['Desktop runs on your computer. Lid closed, work paused.', 'Correct. It runs on Anthropic’s computers.', 'Your laptop is not holding up the internet.'] }
+];
+let qAnswered = {}, qScore = 0;
+function renderQuiz() {
+  $('#quiz').innerHTML = QUIZ.map((q, i) => '<li class="q" data-q="' + i + '"><span class="n">QUESTION ' + (i + 1) + ' OF 6</span><h3></h3>' + q.o.map((o, j) => '<button class="opt" type="button" data-j="' + j + '"></button>').join('') + '<p class="fb" aria-live="polite"></p></li>').join('');
+  $$('#quiz .q').forEach((li, i) => { li.querySelector('h3').textContent = QUIZ[i].q; $$('.opt', li).forEach((b, j) => { b.textContent = QUIZ[i].o[j]; }); });
+  $('#score').textContent = '0/6'; $('#rank').textContent = 'Answer all six to get your rank.';
+}
+$('#quiz').addEventListener('click', e => {
+  const b = e.target.closest('.opt'); if (!b) return;
+  const li = b.closest('.q'), i = +li.dataset.q, j = +b.dataset.j, Q = QUIZ[i];
+  if (qAnswered[i] != null) return;
+  qAnswered[i] = j;
+  $$('.opt', li).forEach((o, k) => { o.disabled = true; if (k === Q.a) o.classList.add('right'); });
+  if (j === Q.a) { qScore++; sfx.good(); } else { b.classList.add('wrong'); sfx.bad(); }
+  li.querySelector('.fb').textContent = Q.r[j];
+  $('#score').textContent = qScore + '/6';
+  if (Object.keys(qAnswered).length === QUIZ.length) {
+    const rank = qScore <= 2 ? 'Rank: Cloud Tourist. Replay Level 3. Slowly.' : qScore <= 4 ? 'Rank: Junior Cloud Wrangler. Respectable. Cranky is mildly annoyed.' : qScore === 5 ? 'Rank: Cloud Wizard. One miss. Cranky will mention it forever.' : 'Rank: Cloud Archmage. Cranky has nothing sarcastic left. This has never happened.';
+    $('#rank').textContent = rank;
+    if (qScore >= 5) { fx.rain({ count: 220, colors: fx.PAL.classic }); unlock('boss'); say(qScore === 6 ? 'Six for six. I… have nothing. Congratulations. I hate it.' : 'Five out of six. Very good. I’ll be thinking about the one you missed.', 'happy'); }
+    else say('Boss survived. Replay the levels and come back. I’ll be here. Floating. Judging.', 'meh');
+  }
+});
+$('#quizReset').addEventListener('click', () => { qAnswered = {}; qScore = 0; renderQuiz(); sfx.click(); });
+renderQuiz();
+
+/* ---------------- Danger zone, cheat, reset ---------------- */
+const DNP = [
+  'It says do not press.',
+  'That’s twice. Reading is a skill. Level 1 has practice material.',
+  'You’re the reason buttons need labels.',
+  'Pressing harder doesn’t turn it into a different button.',
+  'I called the Button Authorities. They said “lol.”',
+  'Do you also force-push on Fridays?',
+  'Fine. Here is nothing. Enjoy your nothing.',
+  'Adding to CLAUDE.md: “user does not respect buttons.”',
+  'One more and I release the sad confetti. Don’t test me.',
+  'Behold: sad confetti. You did this.'
+];
+let dnp = 0;
+$('#dnp').addEventListener('click', () => {
+  dnp++;
+  const msg = dnp <= DNP.length ? DNP[dnp - 1] : 'There’s nothing left. You won. Congratulations on winning nothing.';
+  $('#dnpMsg').textContent = msg; say(msg, dnp >= 9 ? 'shock' : 'smug'); sfx.bad();
+  if (dnp === 10) { fx.rain({ count: 60, colors: fx.PAL.sad, g: 30, life: 9 }); unlock('rebel'); }
+});
+function toggleCheat() {
+  cheat = !cheat; document.documentElement.classList.toggle('cheat', cheat);
+  if (cheat) { unlock('cheat'); fx.rain({ count: 120, colors: ['#21c6a9', '#ff5e24', '#7700ff'] }); say('Cheat codes. Cute. They still don’t fix merge conflicts. Enter it again to turn it off.', 'cool'); }
+  else say('Cheat mode off. Back to honest living.', 'meh');
+}
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let kpos = 0;
+addEventListener('keydown', e => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  kpos = k === KONAMI[kpos] ? kpos + 1 : (k === KONAMI[0] ? 1 : 0);
+  if (kpos === KONAMI.length) { kpos = 0; toggleCheat(); }
+});
+let taps = 0, tapTimer = 0;
+$('#brand').addEventListener('click', () => {
+  taps++; clearTimeout(tapTimer); tapTimer = setTimeout(() => { taps = 0; }, 1400);
+  if (taps >= 7) { taps = 0; toggleCheat(); return; }
+  if (taps === 1) window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+});
+let resetArmed = false, resetTimer = 0;
+$('#resetAll').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (!resetArmed) { resetArmed = true; b.textContent = 'Tap again to wipe everything'; resetTimer = setTimeout(() => { resetArmed = false; b.textContent = 'Reset all progress'; }, 3000); return; }
+  clearTimeout(resetTimer); resetArmed = false; b.textContent = 'Reset all progress';
+  got = new Set(); store.set('cc2.ach', []); checks = new Set(); splits = {}; store.set('cc2.checks', []);
+  renderXP(); renderChecks(); $('#clockTime').textContent = '00:00.00'; $('#clockNote').textContent = 'Tap step 1 to start the clock.';
+  say('Progress wiped. Like a cloud computer after you forget to push. Poetic.', 'meh');
+});
+
+/* ---------------- Nav highlight + idle ---------------- */
+if ('IntersectionObserver' in window) {
+  const links = $$('.levels a');
+  const io = new IntersectionObserver(es => {
+    es.forEach(en => { if (en.isIntersecting) links.forEach(a => a.classList.toggle('on', a.dataset.sec === en.target.id)); });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  ['level-1', 'level-2', 'level-3', 'level-4', 'level-5', 'level-6', 'boss'].forEach(id => io.observe(document.getElementById(id)));
+}
+let idleT = 0, asleep = false;
+function wake() {
+  clearTimeout(idleT);
+  if (asleep) { asleep = false; say('I’m up. I was resting my vapor.', 'meh', 3500); }
+  idleT = setTimeout(() => { asleep = true; say('Still there? In cloud terms, you’ve been idle long enough for me to get reclaimed. Kidding. Mostly.', 'sleep', 9000); }, 60000);
+}
+['pointerdown', 'keydown', 'scroll'].forEach(t => addEventListener(t, wake, { passive: true }));
+wake();
+setTimeout(() => say('Oh good, another human who wants to “just quickly set up” a cloud environment. Press Start. I’ll wait. I’m a cloud. Waiting is my whole thing.', 'smug', 9000), 900);
+})();
+</script>
+
+</body>
+</html>
